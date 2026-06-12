@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { styles } from './CustomerSignUp.styles';
 
-const CustomerSignUp = ({ onBack }) => {
+const CustomerSignUp = ({ onBack, onSignUpSuccess }) => {
   // Inputs ki state manage karne ke liye variables
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,7 +24,7 @@ const CustomerSignUp = ({ onBack }) => {
     alert("Please fill all compulsory fields!");
     return;
     }
-    console.log('Success! Form is valid.');
+    if (onSignUpSuccess) onSignUpSuccess();
   };
 
   return (
