@@ -4,9 +4,12 @@ import { WebView } from 'react-native-webview';
 import { styles } from './CustomerHome.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../config/theme';
+import CustomerOrders from './CustomerOrders';
+import CustomerProfile from './CustomerProfile'; 
 
 const CustomerHome = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('home');
 
   // OpenStreetMap ki HTML Script (Leaflet JS use karte hue)
   const mapHtmlScript = `
@@ -45,48 +48,67 @@ const CustomerHome = () => {
     <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-        <WebView
-          source={{ html: mapHtmlScript }}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          startInLoadingState={true} 
-          scalesPageToFit={true}
-          style={{ flex: 1, width: '100%', height: '100%' }}
-        />
-      </View>
+      {activeTab === 'home' ? (
+        <>
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <WebView
+              source={{ html: mapHtmlScript }}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              startInLoadingState={true} 
+              scalesPageToFit={true}
+              style={{ flex: 1, width: '100%', height: '100%' }}
+            />
+          </View>
 
-      {/* 2. Floating Top Search Bar */}
-      <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>⚲</Text> 
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search for services "
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      {/* 3. Bottom Navigation (3 Options) */}
+          {/* Floating Top Search Bar */}
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>⚲</Text> 
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search for services "
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </>
+      ) : activeTab === 'orders' ? (
+        <CustomerOrders />
+      ) : (
+        <CustomerProfile />
+      )}
+      {/* Bottom Navigation (Hamesha visible rahegi) */}
       <View style={styles.bottomNav}>
-        {/* Home Option (Active) */}
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-          <Icon name="home" size={24} color={COLORS.primary} /> {/* 👈 Blue Color */}
-          <Text style={styles.activeNavText}>Home</Text>
+        {/* Home Option */}
+        <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={() => setActiveTab('home')}>
+          <Icon 
+            name={activeTab === 'home' ? "home" : "home-outline"} 
+            size={24} 
+            color={activeTab === 'home' ? COLORS.primary : "#666666"} 
+          />
+          <Text style={activeTab === 'home' ? styles.activeNavText : styles.navText}>Home</Text>
         </TouchableOpacity>
 
         {/* Orders Option */}
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-          <Icon name="clipboard-outline" size={24} color="#666666" /> {/* Unactive grey */}
-          <Text style={styles.navText}>Orders</Text>
+        <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={() => setActiveTab('orders')}>
+          <Icon 
+            name={activeTab === 'orders' ? "clipboard" : "clipboard-outline"} 
+            size={24} 
+            color={activeTab === 'orders' ? COLORS.primary : "#666666"} 
+          />
+          <Text style={activeTab === 'orders' ? styles.activeNavText : styles.navText}>Orders</Text>
         </TouchableOpacity>
 
-       {/* Profile Option */}
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
-         <Icon name="person-outline" size={24} color="#666666" /> {/* Unactive grey */}
-         <Text style={styles.navText}>Profile</Text>
-       </TouchableOpacity>
+        {/* Profile Option */}
+        <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={() => setActiveTab('profile')}>
+          <Icon 
+            name={activeTab === 'profile' ? "person" : "person-outline"} 
+            size={24} 
+            color={activeTab === 'profile' ? COLORS.primary : "#666666"} 
+          />
+          <Text style={activeTab === 'profile' ? styles.activeNavText : styles.navText}>Profile</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
