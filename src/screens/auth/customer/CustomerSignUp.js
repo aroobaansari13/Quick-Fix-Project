@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { styles } from './CustomerSignUp.styles';
 
-const CustomerSignUp = ({ onBack, onSignUpSuccess }) => {
+const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
   // Inputs ki state manage karne ke liye variables
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -111,7 +111,7 @@ const CustomerSignUp = ({ onBack, onSignUpSuccess }) => {
 
           <View style={styles.footer}>
              <Text style={styles.footerText}>Already have an account?</Text>
-                <TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.7} onPress={onSignInPress}>
                   <Text style={styles.signInText}>Sign In</Text>
                 </TouchableOpacity>
           </View>

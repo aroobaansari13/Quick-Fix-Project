@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { styles } from './UserSelection.styles';
 
-const UserSelection = ({ onCustomerPress }) => {
+const UserSelection = ({ onCustomerPress, onSignInPress }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -30,7 +30,7 @@ const UserSelection = ({ onCustomerPress }) => {
       {/* Sign In Option */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account?</Text>
-        <TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.7} onPress={onSignInPress}>
           <Text style={styles.signInText}>Sign In</Text>
         </TouchableOpacity>
       </View>
