@@ -1,62 +1,60 @@
 import { StyleSheet } from 'react-native';
-import { COLORS } from '../../config/theme';
+import { COLORS } from '../../../config/theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    paddingTop: 60,           
-    justifyContent: 'flex-start',
+    paddingHorizontal: 30,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   logo1: {
-    width: 150,
-    height: 150,
-    marginTop: 120
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    width: 120,
+    height: 120,
     marginBottom: 10,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 40,
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#333',
+    // marginBottom: 10,
     textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 22,
   },
   button: {
     backgroundColor: COLORS.primary,
     width: '100%',
-    height: 55,
-    borderRadius: 12,
+    height: 56,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',
+    marginTop: 5,
   },
   footerText: {
-    fontSize: 15,
     color: '#666',
+    fontSize: 14,
   },
   signInText: {
-    fontSize: 15,
     color: COLORS.primary,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginLeft: 5,
+    marginBottom: 60
   },
 });

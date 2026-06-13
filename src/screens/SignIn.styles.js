@@ -4,22 +4,22 @@ import { COLORS } from '../config/theme';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Clean white background
+    backgroundColor: '#FFFFFF',
   },
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 25,
-    paddingTop: 40, // 🟢 Content ko top par push karne ke liye thodi padding
+    paddingTop: 40,
   },
   headerSection: {
-    marginBottom: 20, // 🟢 Logo aur text ke baad ka gap kam kiya (Pehle 40 tha)
+    marginBottom: 20, 
     alignItems: 'flex-start',
   },
   welcomeText: {
-    fontSize: 26, // 👈 Thoda mazeed compact kiya
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#333333',
-    marginTop: 10, // Logo aur Welcome ke darmiyan space
+    marginTop: 5, 
   },
   subText: {
     fontSize: 14,
@@ -27,13 +27,13 @@ export const styles = StyleSheet.create({
     marginTop: 4,
   },
   formSection: {
-    marginTop: 10, // 🟢 Header aur Input form ke darmiyan space kam ki
+    marginTop: 10,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '500',
     color: '#444444',
-    marginBottom: 6, // 🟢 Label aur Input box ka gap kam kiya
+    marginBottom: 6,
     marginLeft: 4,
   },
   inputContainer: {
@@ -44,8 +44,8 @@ export const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     borderRadius: 16,
     paddingHorizontal: 15,
-    height: 52, // 🟢 Input box ki height thodi compact ki (Pehle 56 thi)
-    marginBottom: 12, // 🟢 Email aur Password fields ke darmiyan ka gap kam kiya (Pehle 20 tha)
+    height: 52,
+    marginBottom: 12, 
   },
   inputIcon: {
     marginRight: 12,
@@ -57,8 +57,8 @@ export const styles = StyleSheet.create({
   },
   forgotPasswordContainer: {
     alignSelf: 'flex-end',
-    marginTop: 2, // 🟢 Password input ke foran baad chipkane ke liye
-    marginBottom: 20, // 🟢 Forgot password aur Sign In button ka gap kam kiya (Pehle 30 tha)
+    marginTop: 2, 
+    marginBottom: 20,
   },
   forgotPasswordText: {
     color: COLORS.primary,
@@ -68,7 +68,7 @@ export const styles = StyleSheet.create({
   signInButton: {
     backgroundColor: COLORS.primary,
     borderRadius: 16,
-    height: 52, // 🟢 Button ki height compact ki
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 2,
@@ -76,7 +76,7 @@ export const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    marginTop: 5, // Extra push spacing
+    marginTop: 5,
   },
   signInButtonText: {
     color: '#FFFFFF',
@@ -87,7 +87,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 25, // 🟢 Button ke baad bottom area ki narrow space
+    marginTop: 25,
     marginBottom: 20,
   },
   footerText: {

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { styles } from './UserSelection.styles';
 
-const UserSelection = ({ onCustomerPress, onSignInPress }) => {
+const UserSelection = ({ onCustomerPress, onSignInPress, onProviderPress }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -13,17 +13,15 @@ const UserSelection = ({ onCustomerPress, onSignInPress }) => {
         style={styles.logo1}
         resizeMode="contain"
       />
-
       <Text style={styles.title}>Welcome to QuickFix</Text>
       <Text style={styles.subtitle}>Choose how you want to use the app</Text>
-
       {/* Option 1: Customer */}
       <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={onCustomerPress}>
         <Text style={styles.buttonText}>Sign Up As Customer</Text>
       </TouchableOpacity>
 
       {/* Option 2: Provider */}
-      <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={onProviderPress}>
         <Text style={styles.buttonText}>Sign Up As Provider</Text>
       </TouchableOpacity>
 
