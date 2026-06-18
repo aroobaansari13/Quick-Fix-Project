@@ -9,6 +9,7 @@ import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
 import MechanicSignUpStep1 from './src/screens/auth/provider/MechanicSignUpStep1';
 import MechanicSignUpStep2 from './src/screens/auth/provider/MechanicSignUpStep2';
 import AdminDashboard from './src/screens/admin/AdminDashboard';
+import PendingReviewScreen from './src/screens/auth/provider/PendingReviewScreen';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -59,8 +60,13 @@ const App = () => {
       {currentScreen === 'mechanicSignUpStep2' && (
         <MechanicSignUpStep2 
           onBack={() => setCurrentScreen('mechanicSignUpStep1')} // Wapis Step 1 par jane ke liye
-          onSignUpFinish={() => alert('Your request in under review')} // Registration ke baad Login par le jayein
+          onSignUpFinish={() => setCurrentScreen('pendingReview')} // Registration ke baad Login par le jayein
           onSignInPress={() => setCurrentScreen('signIn')}
+        />
+      )}
+      {currentScreen === 'pendingReview' && (
+        <PendingReviewScreen 
+          onBackToSignIn={() => setCurrentScreen('signIn')} 
         />
       )}
       {currentScreen === 'adminDashboard' && (
