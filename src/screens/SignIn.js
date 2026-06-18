@@ -3,11 +3,30 @@ import { View, Text, TextInput, TouchableOpacity, StatusBar, ScrollView, Image }
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './SignIn.styles';
 import { COLORS } from '../config/theme'; // Global blue theme load karne ke liye
+import { ADMIN_CREDENTIALS } from '../config/adminConfig';
 
-const SignIn = () => {
+const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleLogin = () => {
+    // Safe Check: GitHub par sirf variables ke naam jayenge, asli data nahi!
+    if (
+      email.trim().toLowerCase() === ADMIN_CREDENTIALS.EMAIL && 
+      password === ADMIN_CREDENTIALS.PASSWORD
+    ) {
+      if (onAdminLoginSuccess) {
+        onAdminLoginSuccess(); 
+      }
+      return; 
+    }
+    if (!email || !password) {
+      alert("Please fill all fields");
+      return;
+    }
+    if (onSignInSuccess) onSignInSuccess();
+  };
 
   return (
     <View style={styles.container}>
@@ -74,7 +93,7 @@ const SignIn = () => {
           </TouchableOpacity>
 
           {/* 3. Sign In Button */}
-          <TouchableOpacity style={styles.signInButton} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.signInButton} activeOpacity={0.8} onPress={handleLogin}>
             <Text style={styles.signInButtonText}>Sign In</Text>
           </TouchableOpacity>
 

@@ -8,6 +8,7 @@ import SignIn from './src/screens/SignIn';
 import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
 import MechanicSignUpStep1 from './src/screens/auth/provider/MechanicSignUpStep1';
 import MechanicSignUpStep2 from './src/screens/auth/provider/MechanicSignUpStep2';
+import AdminDashboard from './src/screens/admin/AdminDashboard';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -36,6 +37,7 @@ const App = () => {
      {/* 4. SignIn screen ki condition add ki */}
       {currentScreen === 'signIn' && (
         <SignIn 
+          onAdminLoginSuccess={() => setCurrentScreen('adminDashboard')}
           onBack={() => setCurrentScreen('selection')} 
           onSignInSuccess={() => setCurrentScreen('customerHome')}
         />
@@ -59,6 +61,11 @@ const App = () => {
           onBack={() => setCurrentScreen('mechanicSignUpStep1')} // Wapis Step 1 par jane ke liye
           onSignUpFinish={() => alert('Your request in under review')} // Registration ke baad Login par le jayein
           onSignInPress={() => setCurrentScreen('signIn')}
+        />
+      )}
+      {currentScreen === 'adminDashboard' && (
+        <AdminDashboard 
+         onLogout={() => setCurrentScreen('signIn')} 
         />
       )}
      {currentScreen === 'customerHome' && (
