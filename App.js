@@ -13,6 +13,7 @@ import PendingReviewScreen from './src/screens/auth/provider/PendingReviewScreen
 import MechanicHome from './src/screens/provider/MechanicHome';
 import FuelStationSignUpStep1 from './src/screens/auth/provider/FuelStationSignUpStep1';
 import FuelStationSignUpStep2 from './src/screens/auth/provider/FuelStationSignUpStep2';
+import FuelStationHome from './src/screens/provider/FuelStationHome';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -79,9 +80,12 @@ const App = () => {
       {currentScreen === 'fuelStationSignUpStep2' && ( 
         <FuelStationSignUpStep2
           onBack={() => setCurrentScreen('fuelStationSignUpStep1')} // Wapis Step 1 par jane ke liye
-          onSignUpFinish={() => setCurrentScreen('pendingReview')} // Registration ke baad Login par le jayein
+          onSignUpFinish={() => setCurrentScreen('fuelStationHome')} // Registration ke baad Login par le jayein
           onSignInPress={() => setCurrentScreen('signIn')}
         />
+      )}
+      {currentScreen === 'fuelStationHome' && (
+        <FuelStationHome />
       )}
       {currentScreen === 'pendingReview' && (
         <PendingReviewScreen 
