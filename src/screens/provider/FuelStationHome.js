@@ -1,61 +1,106 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar, Image, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './FuelStationHome.styles';
+import ProviderOrders from './ProviderOrders';
+import ProviderProfile from './ProviderProfile';
 
 const FuelStationHome = () => {
+  const [activeTab, setActiveTab] = useState('home');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'orders':
+        return <ProviderOrders />;
+      case 'profile':
+        return <ProviderProfile onLogout={() => alert('Logout Clicked')} />;
+      case 'home':
+      default:
+        return (
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            {/* 2. EMPTY STATE / SERVICE LISTING SECTION */}
+            <View style={styles.emptyStateContainer}>
+              <View style={styles.illustrationCircle}>
+                <Icon name="construct-outline" size={80} color="#1E3A8A" />
+              </View>
+              <Text style={styles.emptyTitle}>No Services Listed Yet</Text>
+              <Text style={styles.emptySub}>
+                Tap the plus button below to add your first car service and start getting orders.
+              </Text>
+            </View>
+          </ScrollView>
+        );
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* 1. TOP HEADER SECTION */}
-      <View style={styles.header}>
-        <View style={styles.topheader}>
-          <Text style={styles.welcomeText}>Hello,</Text>
-          <Text style={styles.mechanicName}>RZC Fuel Station</Text>
+      {/* 1. TOP HEADER SECTION (Profile tab par hide hoga layout clean rakhne ke liye) */}
+      {activeTab !== 'profile' && (
+        <View style={styles.header}>
+          <View style={styles.topheader}>
+            <Text style={styles.welcomeText}>Hello,</Text>
+            <Text style={styles.mechanicName}>RZC Fuel Station</Text>
+          </View>
+          <TouchableOpacity style={styles.profileContainer}>
+            <Image 
+              source={{ uri: 'https://via.placeholder.com/50' }} 
+              style={styles.profileImage} 
+            />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.profileContainer}>
-          {/* Yahan image placeholder hai */}
-          <Image 
-            source={{ uri: 'https://via.placeholder.com/50' }} 
-            style={styles.profileImage} 
-          />
-        </TouchableOpacity>
+      )}
+
+      {/* 🟢 Dynamic Content Area */}
+      <View style={{ flex: 1 }}>
+        {renderContent()}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* 2. EMPTY STATE / SERVICE LISTING SECTION */}
-        <View style={styles.emptyStateContainer}>
-          <View style={styles.illustrationCircle}>
-            <Icon name="construct-outline" size={80} color="#1E3A8A" />
-          </View>
-          <Text style={styles.emptyTitle}>No Services Listed Yet</Text>
-          <Text style={styles.emptySub}>Tap the plus button below to add your first car service and start getting orders.</Text>
-        </View>
+      {/* 3. CENTER PLUS BUTTON (Action - Only visible on Home Tab) */}
+      {activeTab === 'home' && (
+        <TouchableOpacity style={styles.floatingAddButton} activeOpacity={0.9}>
+          <Icon name="add" size={35} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
 
-      </ScrollView>
-
-      {/* 3. CENTER PLUS BUTTON (Action) */}
-      <TouchableOpacity style={styles.floatingAddButton} activeOpacity={0.9}>
-        <Icon name="add" size={35} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      {/* 4. MOCK BOTTOM NAVIGATION */}
+      {/* 🟢 Functional Bottom Navigation Bar */}
       <View style={styles.bottomTab}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Icon name="home" size={26} color="#1E3A8A" />
-          <Text style={[styles.tabLabel, { color: '#1E3A8A' }]}>Home</Text>
+        {/* Home Tab */}
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}>
+          <Icon 
+            name={activeTab === 'home' ? 'home' : 'home-outline'} 
+            size={26} 
+            color={activeTab === 'home' ? '#1E3A8A' : '#94A3B8'} 
+          />
+          <Text style={[styles.tabLabel, { color: activeTab === 'home' ? '#1E3A8A' : '#94A3B8' }]}>
+            Home
+          </Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.tabItem}>
-          <Icon name="clipboard-outline" size={26} color="#94A3B8" />
-          <Text style={styles.tabLabel}>Orders</Text>
+        {/* Orders Tab */}
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}>
+          <Icon 
+            name={activeTab === 'orders' ? 'clipboard' : 'clipboard-outline'} 
+            size={26} 
+            color={activeTab === 'orders' ? '#1E3A8A' : '#94A3B8'} 
+          />
+          <Text style={[styles.tabLabel, { color: activeTab === 'orders' ? '#1E3A8A' : '#94A3B8' }]}>
+            Orders
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
-          <Icon name="person-outline" size={26} color="#94A3B8" />
-          <Text style={styles.tabLabel}>Profile</Text>
+        {/* Profile Tab */}
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}>
+          <Icon 
+            name={activeTab === 'profile' ? 'person' : 'person-outline'} 
+            size={26} 
+            color={activeTab === 'profile' ? '#1E3A8A' : '#94A3B8'} 
+          />
+          <Text style={[styles.tabLabel, { color: activeTab === 'profile' ? '#1E3A8A' : '#94A3B8' }]}>
+            Profile
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
