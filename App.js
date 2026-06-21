@@ -10,8 +10,7 @@ import MechanicSignUpContainer from './src/screens/auth/provider/MechanicSignUpC
 import AdminDashboard from './src/screens/admin/AdminDashboard';
 import PendingReviewScreen from './src/screens/auth/provider/PendingReviewScreen';
 import MechanicHome from './src/screens/provider/MechanicHome';
-import FuelStationSignUpStep1 from './src/screens/auth/provider/FuelStationSignUpStep1';
-import FuelStationSignUpStep2 from './src/screens/auth/provider/FuelStationSignUpStep2';
+import FuelStationSignUpContainer from './src/screens/auth/provider/FuelStationSignUpContainer';
 import FuelStationHome from './src/screens/provider/FuelStationHome';
 
 const App = () => {
@@ -49,7 +48,7 @@ const App = () => {
       {currentScreen === 'providerSelection' && (
         <ProviderSelection 
           onMechanicPress={() => setCurrentScreen('mechanicFlow')}
-          onFuelPress={() => setCurrentScreen('fuelStationSignUpStep1')}
+          onFuelPress={() => setCurrentScreen('fuelStationFlow')}
           onSignInPress={() => setCurrentScreen('signIn')}
         />
       )}
@@ -57,31 +56,18 @@ const App = () => {
         <MechanicSignUpContainer 
           onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
-          onSignUpSuccess={() => setCurrentScreen('mechanicHome')} // 🟢 Direct Dynamic Navigation on Success!
-        />
-      )}
-      {/* --- Step 2 --- */}
-      {currentScreen === 'mechanicSignUpStep2' && (
-        <MechanicSignUpStep2 
-          onBack={() => setCurrentScreen('mechanicSignUpStep1')} // Wapis Step 1 par jane ke liye
-          onSignUpFinish={() => setCurrentScreen('mechanicHome')} // Registration ke baad Login par le jayein
-          onSignInPress={() => setCurrentScreen('signIn')}
+          onSignUpSuccess={() => setCurrentScreen('mechanicHome')}
         />
       )}
       {currentScreen === 'mechanicHome' && (
         <MechanicHome />
       )}
-      {currentScreen === 'fuelStationSignUpStep1' && (
-        <FuelStationSignUpStep1
-          onNext={() => setCurrentScreen( 'fuelStationSignUpStep2')}
-          onSignInPress={() => setCurrentScreen( 'signIn')}
-          />
-      ) }
-      {currentScreen === 'fuelStationSignUpStep2' && ( 
-        <FuelStationSignUpStep2
-          onBack={() => setCurrentScreen('fuelStationSignUpStep1')} // Wapis Step 1 par jane ke liye
-          onSignUpFinish={() => setCurrentScreen('fuelStationHome')} // Registration ke baad Login par le jayein
+      {/* 6. Fuel Station Multi-Step Container Flow */}
+      {currentScreen === 'fuelStationFlow' && (
+        <FuelStationSignUpContainer 
+          onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
+          onSignUpSuccess={() => setCurrentScreen('fuelStationHome')} 
         />
       )}
       {currentScreen === 'fuelStationHome' && (

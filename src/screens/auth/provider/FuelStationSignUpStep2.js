@@ -7,25 +7,71 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform,
-  StatusBar 
+  StatusBar,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './FuelStationSignUpStep2.styles';
+import { registerUserInFirebase } from '../../../services/authService';
 
-const FuelStationSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
-  // States according to your exact order
+const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress }) => {
   const [stationName, setStationName] = useState('');
   const [stationAddress, setStationAddress] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [licenseExpiry, setLicenseExpiry] = useState('');
+  const [loading, setLoading] = useState(false); // Spinner state
 
-  const handleSignUp = () => {
-    // Validation Check (If needed)
-    // if (!stationName || !stationAddress || !licenseNumber || !licenseExpiry) {
-    //   alert("Please fill all required fields!");
-    //   return;
-    // }
-    if (onSignUpFinish) onSignUpFinish();
+  const handleSignUp = async () => {
+    // 1. Validation Checks
+    if (!stationName || !stationAddress || !licenseNumber || !licenseExpiry) {
+      Alert.alert("Error", "Please fill all required fields!");
+      return;
+    }
+
+    if (!step1Data) {
+      Alert.alert("Error", "Basic registration details are missing. Please go back.");
+      return;
+    }
+
+    setLoading(true);
+
+    // 2. Compile and merge data from Step 1 and Step 2
+    const combinedAdditionalData = {
+      username: step1Data.username,
+      homeAddress: step1Data.homeAddress,
+      phone: step1Data.phone,
+      cnicFront: step1Data.cnicFront,
+      cnicBack: step1Data.cnicBack,
+      stationName: stationName.trim(),
+      stationAddress: stationAddress.trim(),
+      licenseNumber: licenseNumber.trim(),
+      licenseExpiry: licenseExpiry.trim(),
+    };
+
+    try {
+      // 3. Trigger signup functionality with role 'fuel_station'
+      const result = await registerUserInFirebase(
+        step1Data.email,
+        step1Data.password,
+        step1Data.name,
+        combinedAdditionalData,
+        'fuel_station'
+      );
+
+      setLoading(false);
+
+      if (result.success) {
+        if (onSignUpFinish) {
+          onSignUpFinish();
+        }
+      } else {
+        Alert.alert('Registration Failed', result.error);
+      }
+    } catch (error) {
+      setLoading(false);
+      console.log("Fuel Station Step 2 Error Block:", error);
+    }
   };
 
   return (
@@ -39,7 +85,7 @@ const FuelStationSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
 
           {/* Form Header */}
           <View style={styles.headerRow}>
-             <TouchableOpacity onPress={onBack}>
+             <TouchableOpacity onPress={onBack} disabled={loading}>
                 <Icon name="arrow-back" size={24} color="#333" />
              </TouchableOpacity>
              <Text style={styles.headerText}>Station Details</Text>
@@ -57,6 +103,7 @@ const FuelStationSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
                  placeholderTextColor="#999"
                  value={stationName}
                  onChangeText={setStationName}
+                 editable={!loading}
                />
             </View>
           </View>
@@ -72,6 +119,7 @@ const FuelStationSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
                  placeholderTextColor="#999"
                  value={stationAddress}
                  onChangeText={setStationAddress}
+                 editable={!loading}
                />
             </View>
           </View>
@@ -88,6 +136,7 @@ const FuelStationSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
                  autoCapitalize="characters"
                  value={licenseNumber}
                  onChangeText={setLicenseNumber}
+                 editable={!loading}
                />
             </View>
           </View>
@@ -103,27 +152,36 @@ const FuelStationSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
                  placeholderTextColor="#999"
                  value={licenseExpiry}
                  onChangeText={setLicenseExpiry}
+                 editable={!loading}
                />
             </View>
           </View>
 
           {/* 5. Fuel Station Main Image Upload */}
           <Text style={styles.inputLabel}>Fuel Station Picture *</Text>
-          <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7} disabled={loading}>
             <Icon name="image-outline" size={30} color="#64748B" />
             <Text style={styles.uploadText}>Click to upload fuel station photo</Text>
           </TouchableOpacity>
 
-
           {/* Final Sign Up Button */}
-          <TouchableOpacity style={styles.signUpButton} activeOpacity={0.8} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Complete Registration</Text>
+          <TouchableOpacity 
+            style={[styles.signUpButton, loading && { opacity: 0.7 }]} 
+            activeOpacity={0.8} 
+            onPress={handleSignUp}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Complete Registration</Text>
+            )}
           </TouchableOpacity>
 
           {/* Back to Login */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={onSignInPress}>
+            <TouchableOpacity onPress={onSignInPress} disabled={loading}>
               <Text style={styles.signInText}>Sign In</Text>
             </TouchableOpacity>
           </View>

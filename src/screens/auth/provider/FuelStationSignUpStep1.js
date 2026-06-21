@@ -7,28 +7,56 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform,
-  StatusBar 
+  StatusBar,
+  Alert
 } from 'react-native';
 import { styles } from './FuelStationSignUpStep1.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
   // Fuel Station basic details and documentation states
-  const [name, setName] = useState ('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [homeAddress, setHomeAddress] = useState('');
   const [phone, setPhone] = useState('');
-  const [licenseNumber, setLicenseNumber] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  
+  // CNIC Document States (for future integration, currently tracking status)
+  const [cnicFront, setCnicFront] = useState(null);
+  const [cnicBack, setCnicBack] = useState(null);
 
   const handleNextStep = () => {
-    // Validation Logic (If required)
-    // if (!stationName || !email || !stationAddress || !phone || !licenseNumber || !username || !password) {
-    //   alert("Please fill all compulsory fields!");
-    //   return;
-    // }
-    if (onNext) onNext();
+    // 1. Strict Validation Logic
+    if (!name || !email || !homeAddress || !phone || !username || !password) {
+      Alert.alert("Error", "Please fill all compulsory fields!");
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters!");
+      return;
+    }
+    if (!phone.startsWith('+')) {
+      Alert.alert("Error", "Phone number must start with country code e.g. +923001234567");
+      return;
+    }
+
+    // 2. Compile data into a clean object for the container
+    const step1Data = {
+      name: name.trim(),
+      email: email.trim(),
+      homeAddress: homeAddress.trim(),
+      phone: phone.trim(),
+      username: username.trim().toLowerCase(),
+      password: password,
+      cnicFront: cnicFront,
+      cnicBack: cnicBack,
+    };
+
+    // 3. Forward to FuelStationSignUpContainer
+    if (onNext) {
+      onNext(step1Data);
+    }
   };
 
   return (
@@ -44,7 +72,7 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
           <Text style={styles.headerText}>Fuel Station Registration</Text>
           <Text style={styles.subText}>Step 1 of 2: Station & Owner Details</Text>
 
-          {/* Station Name Input */}
+          {/* Owner Full Name Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Full Name</Text>
             <TextInput
@@ -125,15 +153,25 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
           <Text style={styles.inputLabel}>Upload CNIC Documents (Compulsory)</Text>
           <View style={styles.imageUploadRow}>
             {/* CNIC Front/Page 1 */}
-            <TouchableOpacity style={styles.imageUploadBox} activeOpacity={0.7}>
-              <Icon name="document-text-outline" size={26} color="#64748B" style={{ marginBottom: 6 }} />
-              <Text style={styles.uploadText}>CNIC Front / Page 1</Text>
+            <TouchableOpacity 
+              style={[styles.imageUploadBox, cnicFront && { borderColor: '#10B981' }]} 
+              activeOpacity={0.7}
+            >
+              <Icon name="document-text-outline" size={26} color={cnicFront ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Text style={[styles.uploadText, cnicFront && { color: '#10B981' }]}>
+                {cnicFront ? "Front Uploaded" : "CNIC Front / Page 1"}
+              </Text>
             </TouchableOpacity>
             
             {/* CNIC Back/Page 2 */}
-            <TouchableOpacity style={styles.imageUploadBox} activeOpacity={0.7}>
-              <Icon name="document-text-outline" size={26} color="#64748B" style={{ marginBottom: 6 }} />
-              <Text style={styles.uploadText}>CNIC Back / Page 2</Text>
+            <TouchableOpacity 
+              style={[styles.imageUploadBox, cnicBack && { borderColor: '#10B981' }]} 
+              activeOpacity={0.7}
+            >
+              <Icon name="document-text-outline" size={26} color={cnicBack ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Text style={[styles.uploadText, cnicBack && { color: '#10B981' }]}>
+                {cnicBack ? "Back Uploaded" : "CNIC Back / Page 2"}
+              </Text>
             </TouchableOpacity>
           </View>
 
