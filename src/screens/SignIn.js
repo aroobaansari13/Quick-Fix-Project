@@ -1,40 +1,68 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StatusBar, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StatusBar, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './SignIn.styles';
 import { COLORS } from '../config/theme'; // Global blue theme load karne ke liye
 import { ADMIN_CREDENTIALS } from '../config/adminConfig';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
-const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess }) => {
+const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Safe Check: GitHub par sirf variables ke naam jayenge, asli data nahi!
-    if (
-      email.trim().toLowerCase() === ADMIN_CREDENTIALS.EMAIL && 
-      password === ADMIN_CREDENTIALS.PASSWORD
-    ) {
-      if (onAdminLoginSuccess) {
-        onAdminLoginSuccess(); 
-      }
-      return; 
-    }
-    if (!email || !password) {
-      alert("Please fill all fields");
+  const handleLogin = async () => {
+    if (!email || !password || email.trim() === '') {
+      Alert.alert("Error", "Please fill all fields");
       return;
     }
-    if (onSignInSuccess) onSignInSuccess();
-  };
 
+    const cleanEmail = email.trim().toLowerCase(); 
+    // 2. Admin Login Verification
+    if (ADMIN_CREDENTIALS && ADMIN_CREDENTIALS.email) {
+      if (cleanEmail === ADMIN_CREDENTIALS.email.toLowerCase() && password === ADMIN_CREDENTIALS.password) {
+        if (onAdminLoginSuccess) {
+          onAdminLoginSuccess();
+        }
+        return;
+      }
+    }
+    setLoading(true);
+    try {
+      // 3. Firebase Auth Sign In
+      const userCredential = await auth().signInWithEmailAndPassword(cleanEmail, password);
+      const uid = userCredential.user.uid;
+      // 3. Fetch specific user role from Firestore collection
+      const userDoc = await firestore().collection('Users').doc(uid).get();
+      setLoading(false);
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const userRole = userData.role; // 'customer', 'mechanic', 'fuel_station'
+
+        if (onSignInSuccess) {
+          onSignInSuccess(userRole);
+        }
+      } else {
+        Alert.alert("Error", "User details not found in database.");
+      }
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Login Failed", error.message);
+    }
+  };
   return (
     <View style={styles.container}>
       {/* White background status bar */}
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-
+      {/* Back Button to return to UserSelection */}
+      {onBack && (
+        <TouchableOpacity style={{ position: 'absolute', top: 50, left: 20, zIndex: 10 }} onPress={onBack}>
+          <Icon name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+      )}
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        
         {/* 1. Header Section */}
         <View style={styles.headerSection}>
           <Image 
@@ -61,6 +89,7 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess }) => {
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
+              editable={!loading}
             />
           </View>
 
@@ -76,6 +105,7 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess }) => {
               autoCapitalize="none"
               value={password}
               onChangeText={setPassword}
+              editable={!loading}
             />
             {/* Eye Icon to Toggle Password Visibility */}
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
@@ -93,8 +123,17 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess }) => {
           </TouchableOpacity>
 
           {/* 3. Sign In Button */}
-          <TouchableOpacity style={styles.signInButton} activeOpacity={0.8} onPress={handleLogin}>
-            <Text style={styles.signInButtonText}>Sign In</Text>
+          <TouchableOpacity 
+            style={[styles.signInButton, loading && { opacity: 0.7 }]} 
+            activeOpacity={0.8} 
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.signInButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
         </View>

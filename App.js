@@ -37,12 +37,25 @@ const App = () => {
       onSignInPress={() => setCurrentScreen('signIn')}
       />
      )}
-     {/* 4. SignIn screen ki condition add ki */}
+     {/* 3. General SignIn Screen */}
       {currentScreen === 'signIn' && (
         <SignIn 
           onAdminLoginSuccess={() => setCurrentScreen('adminDashboard')}
           onBack={() => setCurrentScreen('selection')} 
-          onSignInSuccess={() => setCurrentScreen('customerHome')}
+          
+          onSignInSuccess={(role) => {
+            if (role === 'customer') {
+              setCurrentScreen('customerHome');
+            } else if (role === 'mechanic') {
+              setCurrentScreen('mechanicHome');
+            } else if (role === 'fuel_station') {
+              setCurrentScreen('fuelStationHome');
+            } else if (role === 'admin') {
+              setCurrentScreen('adminDashboard');
+            } else {
+              setCurrentScreen('selection'); // Fallback safe switch
+            }
+          }}
         />
       )}
       {currentScreen === 'providerSelection' && (
