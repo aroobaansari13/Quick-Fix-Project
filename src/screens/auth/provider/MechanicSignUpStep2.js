@@ -7,23 +7,62 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform,
+  ActivityIndicator,
   StatusBar 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './MechanicSignUpStep2.styles';
+import { registerUserInFirebase } from '../../../services/authService';
 
-const MechanicSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
+const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }) => {
   const [workshopName, setWorkshopName] = useState('');
   const [workshopAddress, setWorkshopAddress] = useState('');
   const [specializations, setSpecializations] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     // Validation (Specialization optional hai, baqi sab check karenge)
-    // if (!workshopName || !workshopAddress) {
-    //   alert("Please fill Workshop Name and Address!");
-    //   return;
-    // }
-    if (onSignUpFinish) onSignUpFinish();
+    if (!workshopName || !workshopAddress) {
+      alert("Please fill Workshop Name and Address!");
+      return;
+    }
+    if (!step1Data) {
+      Alert.alert("Error", "Basic details missing. Please go back to Step 1.");
+      return;
+    }
+    setLoading(true);
+
+    const combinedAdditionalData = {
+      username: step1Data.username,
+      address: step1Data.address, // Home address
+      phone: step1Data.phone,
+      cnicFront: step1Data.cnicFront,
+      cnicBack: step1Data.cnicBack,
+      workshopName: workshopName.trim(),
+      workshopAddress: workshopAddress.trim(),
+      specializations: specializations.trim() || 'General Mechanic',
+    };
+    
+    try {
+      const result = await registerUserInFirebase(
+        step1Data.email,
+        step1Data.password,
+        step1Data.name,
+        combinedAdditionalData,
+        'mechanic' // 👈 Identity role verified for mechanic
+      );
+      setLoading(false);
+      if (result.success) {
+        if (onSignUpFinish) {
+          onSignUpFinish();
+        }
+      } else {
+        Alert.alert('Signup Failed', result.error);
+      }
+    } catch (error) {
+      setLoading(false);
+      console.log("Mechanic Step 2 Crash Block:", error);
+    }
   };
 
   return (
@@ -55,6 +94,7 @@ const MechanicSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
                  placeholderTextColor="#999"
                  value={workshopName}
                  onChangeText={setWorkshopName}
+                 editable={!loading}
                />
             </View>
           </View>
@@ -70,6 +110,7 @@ const MechanicSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
                  placeholderTextColor="#999"
                  value={workshopAddress}
                  onChangeText={setWorkshopAddress}
+                 editable={!loading}
                />
             </View>
           </View>
@@ -100,19 +141,29 @@ const MechanicSignUpStep2 = ({ onSignUpFinish, onBack, onSignInPress }) => {
                  multiline={true}
                  value={specializations}
                  onChangeText={setSpecializations}
+                 editable={!loading}
                />
             </View>
           </View>
 
           {/* Final Sign Up Button */}
-          <TouchableOpacity style={styles.signUpButton} activeOpacity={0.8} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Complete Registration</Text>
+          <TouchableOpacity 
+            style={[styles.signUpButton, loading && { opacity: 0.7 }]} 
+            activeOpacity={0.8} 
+            onPress={handleSignUp}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Complete Registration</Text>
+            )}
           </TouchableOpacity>
 
           {/* Back to Login */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={onSignInPress}>
+            <TouchableOpacity onPress={onSignInPress}  disabled={loading} >
               <Text style={styles.signInText}>Sign In</Text>
             </TouchableOpacity>
           </View>

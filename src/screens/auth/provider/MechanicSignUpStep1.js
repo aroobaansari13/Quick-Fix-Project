@@ -20,15 +20,44 @@ const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
   const [phone, setPhone] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [cnic, setCnic] = useState('');
+  const [cnicFront, setCnicFront] = useState(null); 
+  const [cnicBack, setCnicBack] = useState(null);
 
   const handleNextStep = () => {
     // Validation check
-    // if (!name || !email || !address || !phone || !username || !password || !cnic) {
-    //   alert("Please fill all compulsory fields!");
-    //   return;
-    // }
-    if (onNext) onNext();
+    if (!name || !email || !address || !phone || !username || !password) {
+      Alert.alert("Please fill all compulsory fields!");
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert("Password must be at least 6 characters!");
+      return;
+    }
+    if (!phone.startsWith('+')) {
+      Alert.alert("Phone number must start with country code e.g. +923001234567");
+      return;
+    }
+    // CNIC verification warning block (agar user ne images upload nahi keen)
+    // Jab image picker lagaogi toh isey pure checklist check par convert kar lena
+    /*
+    if (!cnicFront || !cnicBack) {
+      Alert.alert("Error", "Please upload both Front and Back sides of your CNIC!");
+      return;
+    }
+    */
+    const step1Data = {
+      name: name.trim(),
+      email: email.trim(),
+      address: address.trim(),
+      phone: phone.trim(),
+      username: username.trim().toLowerCase(),
+      password: password, // Password ko text hi rakhein taake step 2 par auth mein use ho sake
+      cnicFront: cnicFront, // step 2 ko object forward ho raha hai
+      cnicBack: cnicBack,
+    };
+    if (onNext) {
+      onNext(step1Data);
+    }
   };
 
   return (
@@ -125,14 +154,24 @@ const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
           <Text style={styles.inputLabel}>Upload CNIC Pictures (Compulsory)</Text>
           <View style={styles.imageUploadRow}>
             {/* Front Side Upload Box */}
-            <TouchableOpacity style={styles.imageUploadBox} activeOpacity={0.7}>
-                <Icon name="camera-outline" size={26} color="#64748B" style={{ marginBottom: 6 }} />
-                <Text style={styles.uploadText}>CNIC Front Side</Text>
+            <TouchableOpacity 
+              style={[styles.imageUploadBox, cnicFront && { borderColor: '#10B981' }]} 
+              activeOpacity={0.7}
+            >
+              <Icon name="camera-outline" size={26} color={cnicFront ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Text style={[styles.uploadText, cnicFront && { color: '#10B981' }]}>
+                {cnicFront ? "Front Uploaded" : "CNIC Front Side"}
+              </Text>
             </TouchableOpacity>
             {/* Back Side Upload Box */}
-            <TouchableOpacity style={styles.imageUploadBox} activeOpacity={0.7}>
-                <Icon name="camera-outline" size={26} color="#64748B" style={{ marginBottom: 6 }} />
-                <Text style={styles.uploadText}>CNIC Back Side</Text>
+            <TouchableOpacity 
+              style={[styles.imageUploadBox, cnicBack && { borderColor: '#10B981' }]} 
+              activeOpacity={0.7}
+            >
+              <Icon name="camera-outline" size={26} color={cnicBack ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Text style={[styles.uploadText, cnicBack && { color: '#10B981' }]}>
+                {cnicBack ? "Back Uploaded" : "CNIC Back Side"}
+              </Text>
             </TouchableOpacity>
           </View>
           {/* Next Button */}

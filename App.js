@@ -6,8 +6,7 @@ import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
 import CustomerHome from './src/screens/customer/CustomerHome';
 import SignIn from './src/screens/SignIn';
 import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
-import MechanicSignUpStep1 from './src/screens/auth/provider/MechanicSignUpStep1';
-import MechanicSignUpStep2 from './src/screens/auth/provider/MechanicSignUpStep2';
+import MechanicSignUpContainer from './src/screens/auth/provider/MechanicSignUpContainer';
 import AdminDashboard from './src/screens/admin/AdminDashboard';
 import PendingReviewScreen from './src/screens/auth/provider/PendingReviewScreen';
 import MechanicHome from './src/screens/provider/MechanicHome';
@@ -49,15 +48,16 @@ const App = () => {
       )}
       {currentScreen === 'providerSelection' && (
         <ProviderSelection 
-          onMechanicPress={() => setCurrentScreen('mechanicSignUpStep1')}
+          onMechanicPress={() => setCurrentScreen('mechanicFlow')}
           onFuelPress={() => setCurrentScreen('fuelStationSignUpStep1')}
           onSignInPress={() => setCurrentScreen('signIn')}
         />
       )}
-      {currentScreen === 'mechanicSignUpStep1' && (
-        <MechanicSignUpStep1 
-          onNext={() => setCurrentScreen('mechanicSignUpStep2')} 
+      {currentScreen === 'mechanicFlow' && (
+        <MechanicSignUpContainer 
+          onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
+          onSignUpSuccess={() => setCurrentScreen('mechanicHome')} // 🟢 Direct Dynamic Navigation on Success!
         />
       )}
       {/* --- Step 2 --- */}
