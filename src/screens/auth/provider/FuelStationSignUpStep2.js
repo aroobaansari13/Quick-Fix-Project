@@ -14,43 +14,64 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './FuelStationSignUpStep2.styles';
 import { registerUserInFirebase } from '../../../services/authService';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress }) => {
   const [stationName, setStationName] = useState('');
   const [stationAddress, setStationAddress] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [licenseExpiry, setLicenseExpiry] = useState('');
-  const [loading, setLoading] = useState(false); // Spinner state
-
+  const [loading, setLoading] = useState(false);
+  const [stationPic, setStationPic] = useState(null);
+  // Picker Logic Function
+  const handleStationPicPick = async () => {
+    const options = { mediaType: 'photo', quality: 0.8 };
+    try {
+      const response = await launchImageLibrary(options);
+      if (response.didCancel) return;
+      if (response.errorCode) {
+        Alert.alert('Error', response.errorMessage || 'Failed to pick image');
+        return;
+      }
+      if (response.assets && response.assets.length > 0) {
+        setStationPic(response.assets[0]);
+        Alert.alert("Success", "Station Photo selected successfully!");
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while opening gallery');
+      console.log(error);
+    }
+  };
   const handleSignUp = async () => {
-    // 1. Validation Checks
+    // Validation Checks
     if (!stationName || !stationAddress || !licenseNumber || !licenseExpiry) {
       Alert.alert("Error", "Please fill all required fields!");
       return;
     }
-
+    if (!stationPic) {
+      Alert.alert("Error", "Please upload your Fuel Station Picture!");
+      return;
+    }
     if (!step1Data) {
       Alert.alert("Error", "Basic registration details are missing. Please go back.");
       return;
     }
-
     setLoading(true);
 
-    // 2. Compile and merge data from Step 1 and Step 2
     const combinedAdditionalData = {
       username: step1Data.username,
       homeAddress: step1Data.homeAddress,
       phone: step1Data.phone,
-      cnicFront: step1Data.cnicFront,
-      cnicBack: step1Data.cnicBack,
+      cnicFrontName: step1Data.cnicFront ? (step1Data.cnicFront.fileName || 'cnic_front.jpg') : 'None',
+      cnicBackName: step1Data.cnicBack ? (step1Data.cnicBack.fileName || 'cnic_back.jpg') : 'None',
       stationName: stationName.trim(),
       stationAddress: stationAddress.trim(),
       licenseNumber: licenseNumber.trim(),
       licenseExpiry: licenseExpiry.trim(),
+      stationPicName: stationPic.fileName || 'fuel_station.jpg',
     };
 
     try {
-      // 3. Trigger signup functionality with role 'fuel_station'
       const result = await registerUserInFirebase(
         step1Data.email,
         step1Data.password,
@@ -58,9 +79,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
         combinedAdditionalData,
         'fuel_station'
       );
-
       setLoading(false);
-
       if (result.success) {
         if (onSignUpFinish) {
           onSignUpFinish();
@@ -82,7 +101,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
           <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
+          
           {/* Form Header */}
           <View style={styles.headerRow}>
              <TouchableOpacity onPress={onBack} disabled={loading}>
@@ -159,9 +178,20 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
 
           {/* 5. Fuel Station Main Image Upload */}
           <Text style={styles.inputLabel}>Fuel Station Picture *</Text>
-          <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7} disabled={loading}>
-            <Icon name="image-outline" size={30} color="#64748B" />
-            <Text style={styles.uploadText}>Click to upload fuel station photo</Text>
+          <TouchableOpacity 
+            style={[styles.uploadBox, stationPic && { borderColor: '#10B981', borderWidth: 1.5 }]} 
+            activeOpacity={0.7} 
+            onPress={handleStationPicPick}
+            disabled={loading}
+          >
+            <Icon 
+              name={stationPic ? "checkmark-circle-outline" : "image-outline"} 
+              size={30} 
+              color={stationPic ? '#10B981' : '#64748B'} 
+            />
+            <Text style={[styles.uploadText, stationPic && { color: '#10B981', fontWeight: '500' }]}>
+              {stationPic ? `Selected: ${stationPic.fileName?.substring(0, 20)}...` : "Click to upload fuel station photo"}
+            </Text>
           </TouchableOpacity>
 
           {/* Final Sign Up Button */}

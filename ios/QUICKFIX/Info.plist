@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>QuickFix needs access to your photo library to upload CNIC and workshop pictures.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>QuickFix needs access to your documents to upload registration PDFs.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>

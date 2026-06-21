@@ -12,22 +12,52 @@ import {
 } from 'react-native';
 import { styles } from './FuelStationSignUpStep1.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
-  // Fuel Station basic details and documentation states
+  // Fuel Station basic details 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [homeAddress, setHomeAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  
-  // CNIC Document States (for future integration, currently tracking status)
   const [cnicFront, setCnicFront] = useState(null);
   const [cnicBack, setCnicBack] = useState(null);
 
+  // Picker Logic 
+  const handleCnicPick = async (side) => {
+    const options = {
+      mediaType: 'photo',
+      quality: 0.8,
+    };
+
+    try {
+      const response = await launchImageLibrary(options);
+
+      if (response.didCancel) return;
+      if (response.errorCode) {
+        Alert.alert('Error', response.errorMessage || 'Failed to pick image');
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const pickedAsset = response.assets[0];
+        if (side === 'front') {
+          setCnicFront(pickedAsset);
+        } else if (side === 'back') {
+          setCnicBack(pickedAsset);
+        }
+        Alert.alert("Success", `${side === 'front' ? 'CNIC Front' : 'CNIC Back'} selected!`);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while opening gallery');
+      console.log(error);
+    }
+  };
+
   const handleNextStep = () => {
-    // 1. Strict Validation Logic
+    // Validation Logic
     if (!name || !email || !homeAddress || !phone || !username || !password) {
       Alert.alert("Error", "Please fill all compulsory fields!");
       return;
@@ -40,8 +70,11 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
       Alert.alert("Error", "Phone number must start with country code e.g. +923001234567");
       return;
     }
+    if (!cnicFront || !cnicBack) {
+      Alert.alert("Error", "Please upload both Front and Back sides of your CNIC!");
+      return;
+    }
 
-    // 2. Compile data into a clean object for the container
     const step1Data = {
       name: name.trim(),
       email: email.trim(),
@@ -53,7 +86,6 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
       cnicBack: cnicBack,
     };
 
-    // 3. Forward to FuelStationSignUpContainer
     if (onNext) {
       onNext(step1Data);
     }
@@ -156,10 +188,16 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
             <TouchableOpacity 
               style={[styles.imageUploadBox, cnicFront && { borderColor: '#10B981' }]} 
               activeOpacity={0.7}
+              onPress={() => handleCnicPick('front')} // ⚡ Hooked picker
             >
-              <Icon name="document-text-outline" size={26} color={cnicFront ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Icon 
+                name={cnicFront ? "checkmark-circle-outline" : "document-text-outline"} 
+                size={26} 
+                color={cnicFront ? '#10B981' : '#64748B'} 
+                style={{ marginBottom: 6 }} 
+              />
               <Text style={[styles.uploadText, cnicFront && { color: '#10B981' }]}>
-                {cnicFront ? "Front Uploaded" : "CNIC Front / Page 1"}
+                {cnicFront ? "Front Selected" : "CNIC Front / Page 1"}
               </Text>
             </TouchableOpacity>
             
@@ -167,10 +205,16 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
             <TouchableOpacity 
               style={[styles.imageUploadBox, cnicBack && { borderColor: '#10B981' }]} 
               activeOpacity={0.7}
+              onPress={() => handleCnicPick('back')} // ⚡ Hooked picker
             >
-              <Icon name="document-text-outline" size={26} color={cnicBack ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Icon 
+                name={cnicBack ? "checkmark-circle-outline" : "document-text-outline"} 
+                size={26} 
+                color={cnicBack ? '#10B981' : '#64748B'} 
+                style={{ marginBottom: 6 }} 
+              />
               <Text style={[styles.uploadText, cnicBack && { color: '#10B981' }]}>
-                {cnicBack ? "Back Uploaded" : "CNIC Back / Page 2"}
+                {cnicBack ? "Back Selected" : "CNIC Back / Page 2"}
               </Text>
             </TouchableOpacity>
           </View>

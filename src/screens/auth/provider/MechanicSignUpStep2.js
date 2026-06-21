@@ -8,22 +8,50 @@ import {
   KeyboardAvoidingView, 
   Platform,
   ActivityIndicator,
-  StatusBar 
+  StatusBar,
+  Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './MechanicSignUpStep2.styles';
 import { registerUserInFirebase } from '../../../services/authService';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }) => {
   const [workshopName, setWorkshopName] = useState('');
   const [workshopAddress, setWorkshopAddress] = useState('');
   const [specializations, setSpecializations] = useState('');
+  const [workshopPic, setWorkshopPic] = useState(null);
+  const [certificate, setCertificate] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const handleFilePick = async (fileType) => {
+    const options = { mediaType: 'photo', quality: 0.8 };
+    try {
+      const response = await launchImageLibrary(options);
+      if (response.didCancel) return;
+      if (response.errorCode) {
+        Alert.alert('Error', response.errorMessage || 'Failed to pick image');
+        return;
+      }
+      if (response.assets && response.assets.length > 0) {
+        const pickedAsset = response.assets[0];
+        if (fileType === 'workshop_pic') setWorkshopPic(pickedAsset);
+        if (fileType === 'certificate') setCertificate(pickedAsset);
+        Alert.alert("Success", "Photo selected successfully!");
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while opening gallery');
+      console.log(error);
+    }
+  };
+
   const handleSignUp = async () => {
-    // Validation (Specialization optional hai, baqi sab check karenge)
     if (!workshopName || !workshopAddress) {
-      alert("Please fill Workshop Name and Address!");
+      Alert.alert("Error", "Please fill Workshop Name and Address!");
+      return;
+    }
+    if (!workshopPic) {
+      Alert.alert("Error", "Please upload your Workshop Picture!");
       return;
     }
     if (!step1Data) {
@@ -34,13 +62,15 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
 
     const combinedAdditionalData = {
       username: step1Data.username,
-      address: step1Data.address, // Home address
+      address: step1Data.homeAddress || step1Data.address,
       phone: step1Data.phone,
-      cnicFront: step1Data.cnicFront,
-      cnicBack: step1Data.cnicBack,
+      cnicFrontName: step1Data.cnicFront ? (step1Data.cnicFront.fileName || 'cnic_front.jpg') : 'None',
+      cnicBackName: step1Data.cnicBack ? (step1Data.cnicBack.fileName || 'cnic_back.jpg') : 'None',
       workshopName: workshopName.trim(),
       workshopAddress: workshopAddress.trim(),
       specializations: specializations.trim() || 'General Mechanic',
+      workshopPicName: workshopPic.fileName || 'workshop.jpg',
+      certificateName: certificate ? (certificate.fileName || 'certificate.jpg') : 'None',
     };
     
     try {
@@ -49,7 +79,7 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
         step1Data.password,
         step1Data.name,
         combinedAdditionalData,
-        'mechanic' // 👈 Identity role verified for mechanic
+        'mechanic'
       );
       setLoading(false);
       if (result.success) {
@@ -76,7 +106,7 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
 
           {/* Form Header */}
           <View style={styles.headerRow}>
-             <TouchableOpacity onPress={onBack}>
+             <TouchableOpacity onPress={onBack} disabled={loading}>
                 <Icon name="arrow-back" size={24} color="#333" />
              </TouchableOpacity>
              <Text style={styles.headerText}>Workshop Details</Text>
@@ -117,16 +147,38 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
 
           {/* Workshop Image Upload */}
           <Text style={styles.inputLabel}>Workshop Picture *</Text>
-          <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7}>
-            <Icon name="image-outline" size={30} color="#64748B" />
-            <Text style={styles.uploadText}>Click to upload workshop photo</Text>
+          <TouchableOpacity 
+            style={[styles.uploadBox, workshopPic && { borderColor: '#10B981', borderWidth: 1.5 }]} 
+            activeOpacity={0.7}
+            onPress={() => handleFilePick('workshop_pic')}
+            disabled={loading}
+          >
+            <Icon 
+              name={workshopPic ? "checkmark-circle-outline" : "image-outline"} 
+              size={30} 
+              color={workshopPic ? '#10B981' : '#64748B'} 
+            />
+            <Text style={[styles.uploadText, workshopPic && { color: '#10B981', fontWeight: '500' }]}>
+              {workshopPic ? `Selected: ${workshopPic.fileName?.substring(0, 20)}...` : "Click to upload workshop photo"}
+            </Text>
           </TouchableOpacity>
 
           {/* Certificates Upload */}
-          <Text style={styles.inputLabel}>Professional Certificates *</Text>
-          <TouchableOpacity style={styles.uploadBox} activeOpacity={0.7}>
-            <Icon name="document-text-outline" size={30} color="#64748B" />
-            <Text style={styles.uploadText}>Upload diplomas or certifications (PDF/JPG)</Text>
+          <Text style={styles.inputLabel}>Professional Certificates (Optional)</Text>
+          <TouchableOpacity 
+            style={[styles.uploadBox, certificate && { borderColor: '#10B981', borderWidth: 1.5 }]} 
+            activeOpacity={0.7}
+            onPress={() => handleFilePick('certificate')}
+            disabled={loading}
+          >
+            <Icon 
+              name={certificate ? "checkmark-circle-outline" : "document-text-outline"} 
+              size={30} 
+              color={certificate ? '#10B981' : '#64748B'} 
+            />
+            <Text style={[styles.uploadText, certificate && { color: '#10B981', fontWeight: '500' }]}>
+              {certificate ? `Selected: ${certificate.fileName?.substring(0, 20)}...` : "Upload diplomas or certifications (PDF/JPG)"}
+            </Text>
           </TouchableOpacity>
 
           {/* Specializations (Optional) */}
@@ -163,7 +215,7 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
           {/* Back to Login */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={onSignInPress}  disabled={loading} >
+            <TouchableOpacity onPress={onSignInPress} disabled={loading} >
               <Text style={styles.signInText}>Sign In</Text>
             </TouchableOpacity>
           </View>

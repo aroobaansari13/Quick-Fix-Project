@@ -7,13 +7,15 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform,
-  StatusBar 
+  StatusBar,
+  Alert
 } from 'react-native';
 import { styles } from './MechanicSignUpStep1.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
+// Image Picker Import
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
-  // Inputs ki state manage karne ke liye variables
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
@@ -23,38 +25,70 @@ const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
   const [cnicFront, setCnicFront] = useState(null); 
   const [cnicBack, setCnicBack] = useState(null);
 
+  // Function to handle CNIC Selection from Gallery
+  const handleCnicPick = async (side) => {
+    const options = {
+      mediaType: 'photo',
+      quality: 0.8,
+    };
+
+    try {
+      const response = await launchImageLibrary(options);
+
+      if (response.didCancel) {
+        console.log(`User cancelled CNIC ${side} picker`);
+        return;
+      } else if (response.errorCode) {
+        Alert.alert('Error', response.errorMessage || 'Failed to pick image');
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const pickedAsset = response.assets[0];
+        
+        if (side === 'front') {
+          setCnicFront(pickedAsset);
+        } else if (side === 'back') {
+          setCnicBack(pickedAsset);
+        }
+        Alert.alert("Success", `${side === 'front' ? 'CNIC Front' : 'CNIC Back'} selected!`);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while opening gallery');
+      console.log(error);
+    }
+  };
+
   const handleNextStep = () => {
-    // Validation check
     if (!name || !email || !address || !phone || !username || !password) {
-      Alert.alert("Please fill all compulsory fields!");
+      Alert.alert("Error", "Please fill all compulsory fields!");
       return;
     }
     if (password.length < 6) {
-      Alert.alert("Password must be at least 6 characters!");
+      Alert.alert("Error", "Password must be at least 6 characters!");
       return;
     }
     if (!phone.startsWith('+')) {
-      Alert.alert("Phone number must start with country code e.g. +923001234567");
+      Alert.alert("Error", "Phone number must start with country code e.g. +923001234567");
       return;
     }
-    // CNIC verification warning block (agar user ne images upload nahi keen)
-    // Jab image picker lagaogi toh isey pure checklist check par convert kar lena
-    /*
+
     if (!cnicFront || !cnicBack) {
       Alert.alert("Error", "Please upload both Front and Back sides of your CNIC!");
       return;
     }
-    */
+
     const step1Data = {
       name: name.trim(),
       email: email.trim(),
-      address: address.trim(),
+      homeAddress: address.trim(), 
       phone: phone.trim(),
       username: username.trim().toLowerCase(),
-      password: password, // Password ko text hi rakhein taake step 2 par auth mein use ho sake
-      cnicFront: cnicFront, // step 2 ko object forward ho raha hai
+      password: password, 
+      cnicFront: cnicFront,
       cnicBack: cnicBack,
     };
+
     if (onNext) {
       onNext(step1Data);
     }
@@ -157,23 +191,37 @@ const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
             <TouchableOpacity 
               style={[styles.imageUploadBox, cnicFront && { borderColor: '#10B981' }]} 
               activeOpacity={0.7}
+              onPress={() => handleCnicPick('front')} // ⚡ Link to logic
             >
-              <Icon name="camera-outline" size={26} color={cnicFront ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Icon 
+                name={cnicFront ? "checkmark-circle-outline" : "camera-outline"} 
+                size={26} 
+                color={cnicFront ? '#10B981' : '#64748B'} 
+                style={{ marginBottom: 6 }} 
+              />
               <Text style={[styles.uploadText, cnicFront && { color: '#10B981' }]}>
-                {cnicFront ? "Front Uploaded" : "CNIC Front Side"}
+                {cnicFront ? "Front Selected" : "CNIC Front Side"}
               </Text>
             </TouchableOpacity>
+
             {/* Back Side Upload Box */}
             <TouchableOpacity 
               style={[styles.imageUploadBox, cnicBack && { borderColor: '#10B981' }]} 
               activeOpacity={0.7}
+              onPress={() => handleCnicPick('back')} // ⚡ Link to logic
             >
-              <Icon name="camera-outline" size={26} color={cnicBack ? '#10B981' : '#64748B'} style={{ marginBottom: 6 }} />
+              <Icon 
+                name={cnicBack ? "checkmark-circle-outline" : "camera-outline"} 
+                size={26} 
+                color={cnicBack ? '#10B981' : '#64748B'} 
+                style={{ marginBottom: 6 }} 
+              />
               <Text style={[styles.uploadText, cnicBack && { color: '#10B981' }]}>
-                {cnicBack ? "Back Uploaded" : "CNIC Back Side"}
+                {cnicBack ? "Back Selected" : "CNIC Back Side"}
               </Text>
             </TouchableOpacity>
           </View>
+
           {/* Next Button */}
           <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={handleNextStep}>
             <Text style={styles.buttonText}>Next Step</Text>
