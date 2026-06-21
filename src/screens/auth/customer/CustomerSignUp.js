@@ -7,24 +7,61 @@ import {
   ScrollView, 
   KeyboardAvoidingView, 
   Platform,
-  StatusBar 
+  StatusBar,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { styles } from './CustomerSignUp.styles';
+import { registerUserInFirebase } from '../../../services/authService';
 
 const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
-  // Inputs ki state manage karne ke liye variables
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
+    // Validation
     if (!name || !email || !address || !phone || !password) {
-    alert("Please fill all compulsory fields!");
-    return;
+      Alert.alert('Error', 'Please fill all compulsory fields!');
+      return;
     }
-    if (onSignUpSuccess) onSignUpSuccess();
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters!');
+      return;
+    }
+    if (!phone.startsWith('+')) {
+      Alert.alert('Error', 'Phone number must start with country code e.g. +923001234567');
+      return;
+    }
+
+    setLoading(true);
+
+    const additionalData = {
+      address: address.trim(),
+      phone: phone.trim(),
+    };
+
+    const result = await registerUserInFirebase(
+      email.trim(),
+      password,
+      name.trim(),
+      additionalData,
+      'customer'
+    );
+
+    setLoading(false);
+
+   if (result.success) {
+      if (onSignUpSuccess) {
+        onSignUpSuccess();
+      }
+    } else {
+      Alert.alert('Signup Failed', result.error);
+    }
   };
 
   return (
@@ -32,8 +69,10 @@ const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
       style={{ flex: 1 }} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.container}>
           <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
@@ -96,25 +135,34 @@ const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
             <Text style={styles.inputLabel}>Password</Text>
             <TextInput
               style={styles.input}
-              placeholder="Create a strong password"
+              placeholder="Create a strong password (min 6 characters)"
               placeholderTextColor="#999"
-              secureTextEntry={true} // Password text ghaib (bullet dots) karne ke liye
+              secureTextEntry={true}
               value={password}
               onChangeText={setPassword}
             />
           </View>
 
           {/* Sign Up Button */}
-          <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Sign Up</Text>
+          <TouchableOpacity 
+            style={[styles.button, loading && { opacity: 0.7 }]} 
+            activeOpacity={0.8} 
+            onPress={handleSignUp}
+            disabled={loading}
+          >
+            {loading 
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.buttonText}>Sign Up</Text>
+            }
           </TouchableOpacity>
 
           <View style={styles.footer}>
-             <Text style={styles.footerText}>Already have an account?</Text>
-                <TouchableOpacity activeOpacity={0.7} onPress={onSignInPress}>
-                  <Text style={styles.signInText}>Sign In</Text>
-                </TouchableOpacity>
+            <Text style={styles.footerText}>Already have an account?</Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={onSignInPress}>
+              <Text style={styles.signInText}>Sign In</Text>
+            </TouchableOpacity>
           </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
