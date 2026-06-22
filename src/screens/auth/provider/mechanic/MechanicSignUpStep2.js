@@ -13,11 +13,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from '../mechanic/MechanicSignUpStep2.styles';
-import { registerUserInFirebase } from '../../../../services/authService';
 import { launchImageLibrary } from 'react-native-image-picker';
+import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }) => {
+const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress }) => {
   const [workshopName, setWorkshopName] = useState('');
   const [workshopAddress, setWorkshopAddress] = useState('');
   const [specializations, setSpecializations] = useState('');
@@ -59,43 +59,52 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
       Alert.alert("Error", "Basic details missing. Please go back to Step 1.");
       return;
     }
+
     setLoading(true);
 
-    const combinedAdditionalData = {
-      username: step1Data.username,
-      address: step1Data.homeAddress || step1Data.address,
-      phone: step1Data.phone,
-      cnicFrontName: step1Data.cnicFront ? (step1Data.cnicFront.fileName || 'cnic_front.jpg') : 'None',
-      cnicBackName: step1Data.cnicBack ? (step1Data.cnicBack.fileName || 'cnic_back.jpg') : 'None',
-      workshopName: workshopName.trim(),
-      workshopAddress: workshopAddress.trim(),
-      specializations: specializations.trim() || 'General Mechanic',
-      workshopPicName: workshopPic.fileName || 'workshop.jpg',
-      certificateName: certificate ? (certificate.fileName || 'certificate.jpg') : 'None',
-    };
-    
     try {
-      const result = await registerUserInFirebase(
-        step1Data.email,
-        step1Data.password,
-        step1Data.name,
-        combinedAdditionalData,
-        'mechanic'
-      );
-      if (result.success) {
-        const currentTimestamp = Date.now().toString();
-        await AsyncStorage.setItem('userRole', 'mechanic');
-        await AsyncStorage.setItem('lastActive', currentTimestamp);
-        setLoading(false);
-        if (onSignUpFinish) {
-          onSignUpFinish();
+      await firestore().collection('PendingApplications').add({
+        name: step1Data.name || 'Unknown Provider',
+        email: step1Data.email.trim().toLowerCase(),
+        password: step1Data.password,
+        phone: step1Data.phone || 'N/A',
+        username: step1Data.username || '',
+        role: 'mechanic',
+        status: 'pending',
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        cnic: step1Data.cnic || 'N/A',
+        profilePicture: step1Data.profilePicUrl || workshopPic.uri || '',
+        documentUrl: step1Data.documentUrl || certificate?.uri || '',
+        shopDetails: {
+          shopName: workshopName.trim(),
+          address: workshopAddress.trim(),
+          specializations: specializations.trim() || 'General Mechanic',
+          latitude: step1Data.latitude || 0,
+          longitude: step1Data.longitude || 0
         }
-      } else {
-        Alert.alert('Signup Failed', result.error);
-      }
+      });
+
+      setLoading(false);
+      
+      Alert.alert(
+        "Application Submitted", 
+        "Your registration request has been successfully sent to the Admin for approval.",
+        [
+          { 
+            text: "OK", 
+            onPress: () => {
+              if (onSignUpFinish) {
+                onSignUpFinish(); 
+              }
+            } 
+          }
+        ]
+      );
+
     } catch (error) {
       setLoading(false);
-      console.log("Mechanic Step 2 Crash Block:", error);
+      console.log("Mechanic Step 2 Pending Submission Crash Block:", error);
+      Alert.alert("Submission Failed", error.message);
     }
   };
 
@@ -198,7 +207,7 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
                  value={specializations}
                  onChangeText={setSpecializations}
                  editable={!loading}
-               />
+              />
             </View>
           </View>
 
@@ -228,4 +237,5 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
     </KeyboardAvoidingView>
   );
 };
+
 export default MechanicSignUpStep2;

@@ -14,6 +14,7 @@ import FuelStationSignUpContainer from './src/screens/auth/provider/fuel/FuelSta
 import FuelStationHome from './src/screens/provider/fuel/FuelStationHome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
+import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -27,12 +28,11 @@ const App = () => {
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
 
   useEffect(() => {
-    // Firebase ka apna state listener
-    const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
-      if (!isShowSplash) {
-        try {
-          const userRole = await AsyncStorage.getItem('userRole');
-          const lastActiveStr = await AsyncStorage.getItem('lastActive');
+  const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
+    if (!isShowSplash) {
+      try {
+        const userRole = await AsyncStorage.getItem('userRole');
+        const lastActiveStr = await AsyncStorage.getItem('lastActive');
 
           if (currentUser && userRole && lastActiveStr) {
             const lastActive = parseInt(lastActiveStr, 10);
@@ -56,7 +56,12 @@ const App = () => {
               else setCurrentScreen('selection');
             }
           } else {
-            setCurrentScreen('selection');
+            await AsyncStorage.setItem('lastActive', currentTime.toString());
+            
+            if (userRole === 'customer') setCurrentScreen('customerHome');
+              else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
+              else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
+            else setCurrentScreen('selection');
           }
         } catch (error) {
           console.log("Session Error:", error);
@@ -138,7 +143,14 @@ const App = () => {
         <MechanicSignUpContainer 
           onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
-          onSignUpSuccess={() => setCurrentScreen('mechanicHome')}
+          // 👇 Is callback ko parameter accept karne ke liye update kiya
+          onSignUpSuccess={(targetScreen) => {
+            if (targetScreen === 'pendingReview') {
+               setCurrentScreen('pendingReview'); // 🔄 Ab yeh direct pending screen par jayega!
+            } else {
+                setCurrentScreen('mechanicHome');
+              }
+          }}
         />
       )}
 
@@ -166,7 +178,14 @@ const App = () => {
       )}
 
       {currentScreen === 'adminDashboard' && (
-        <AdminDashboard onLogout={() => setCurrentScreen('signIn')} />
+        <AdminDashboard 
+        onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
+        />
+      )}
+      {currentScreen === 'pendingAppsList' && (
+        <AdminPendingApplications 
+        onBack={() => setCurrentScreen('adminDashboard')} 
+        />
       )}
 
       {/* 🟢 Updated Block: Isme purani extra screen skip ho gayi hai aur direct image selection synchronization apply kar di hai */}

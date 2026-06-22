@@ -16,10 +16,8 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
 
   const handleLoginSuccess = async (userRole) => {
     try {
-      // ✅ AsyncStorage mein role aur time save karo
       await AsyncStorage.setItem('userRole', userRole);
       await AsyncStorage.setItem('lastActive', Date.now().toString());
-      // ✅ App.js ko batao ke kaunsi screen par jao
       if (onSignInSuccess) {
         onSignInSuccess(userRole);
       }
@@ -36,17 +34,14 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // Admin Login Check
-    if (ADMIN_CREDENTIALS && ADMIN_CREDENTIALS.email) {
-      if (cleanEmail === ADMIN_CREDENTIALS.email.toLowerCase() && password === ADMIN_CREDENTIALS.password) {
-        // ✅ Admin ke liye bhi AsyncStorage save karo
-        await AsyncStorage.setItem('userRole', 'admin');
-        await AsyncStorage.setItem('lastActive', Date.now().toString());
+    if (ADMIN_CREDENTIALS && ADMIN_CREDENTIALS.EMAIL) {
+      if (cleanEmail === ADMIN_CREDENTIALS.EMAIL.toLowerCase() && password === ADMIN_CREDENTIALS.PASSWORD) {
+        setLoading(true);
+        setLoading(false);
         if (onAdminLoginSuccess) onAdminLoginSuccess();
         return;
       }
     }
-
     setLoading(true);
     try {
       const userCredential = await auth().signInWithEmailAndPassword(cleanEmail, password);
@@ -58,7 +53,7 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
       if (userDoc.exists) {
         const userData = userDoc.data();
         const userRole = userData.role;
-        await handleLoginSuccess(userRole); // ✅ Ab yeh call ho raha hai
+        await handleLoginSuccess(userRole);
       } else {
         Alert.alert("Error", "User details not found in database.");
       }
@@ -154,7 +149,7 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
         {/* 4. Footer Section */}
         <View style={styles.footerSection}>
           <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity activeOpacity={0.7} onPress={onSignUpPress}>
             <Text style={styles.signUpLinkText}>Sign Up</Text>
           </TouchableOpacity>
         </View>
