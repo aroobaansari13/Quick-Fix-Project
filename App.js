@@ -19,50 +19,59 @@ const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
   const [currentScreen, setCurrentScreen] = useState('selection');
+  
+  // 🟢 Global Image State: Photo ko state mein manage karne ke liye
+  const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
+  
+  // 🟢 Tab Tracker State: Isse track hoga ke CustomerHome open hote hi kaun sa tab kholna hai
+  const [customerActiveTab, setCustomerActiveTab] = useState('home');
 
   useEffect(() => {
-  // Firebase ka apna state listener
-  const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
-    if (!isShowSplash) {
-      try {
-        const userRole = await AsyncStorage.getItem('userRole');
-        const lastActiveStr = await AsyncStorage.getItem('lastActive');
+    // Firebase ka apna state listener
+    const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
+      if (!isShowSplash) {
+        try {
+          const userRole = await AsyncStorage.getItem('userRole');
+          const lastActiveStr = await AsyncStorage.getItem('lastActive');
 
-        if (currentUser && userRole && lastActiveStr) {
-          const lastActive = parseInt(lastActiveStr, 10);
-          const currentTime = Date.now();
-          const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+          if (currentUser && userRole && lastActiveStr) {
+            const lastActive = parseInt(lastActiveStr, 10);
+            const currentTime = Date.now();
+            const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
-          if (currentTime - lastActive > ONE_MONTH_MS) {
-            await auth().signOut();
-            await AsyncStorage.multiRemove(['userRole', 'lastActive']);
-            setCurrentScreen('signIn');
+            if (currentTime - lastActive > ONE_MONTH_MS) {
+              await auth().signOut();
+              await AsyncStorage.multiRemove(['userRole', 'lastActive']);
+              setCurrentScreen('signIn');
+            } else {
+              await AsyncStorage.setItem('lastActive', currentTime.toString());
+              
+              if (userRole === 'customer') {
+                setCustomerActiveTab('home'); // Login par default map (home) khule
+                setCurrentScreen('customerHome');
+              }
+              else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
+              else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
+              else if (userRole === 'admin') setCurrentScreen('adminDashboard');
+              else setCurrentScreen('selection');
+            }
           } else {
-            await AsyncStorage.setItem('lastActive', currentTime.toString());
-            
-            if (userRole === 'customer') setCurrentScreen('customerHome');
-            else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
-            else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
-            else if (userRole === 'admin') setCurrentScreen('adminDashboard');
-            else setCurrentScreen('selection');
+            setCurrentScreen('selection');
           }
-        } else {
+        } catch (error) {
+          console.log("Session Error:", error);
           setCurrentScreen('selection');
+        } finally {
+          setIsSessionChecking(false);
         }
-      } catch (error) {
-        console.log("Session Error:", error);
-        setCurrentScreen('selection');
-      } finally {
-        setIsSessionChecking(false);
       }
-    }
-  });
+    });
 
-  return () => unsubscribe(); // clean up listener
+    return () => unsubscribe(); // clean up listener
   }, [isShowSplash]);
 
   if (isShowSplash) {
-  return <SplashScreen onFinish={() => setIsShowSplash(false)} />;
+    return <SplashScreen onFinish={() => setIsShowSplash(false)} />;
   }
 
   if (isSessionChecking) {
@@ -76,28 +85,33 @@ const App = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-     {currentScreen === 'selection' && (
-      <UserSelection 
-      onCustomerPress={() => setCurrentScreen('customerSignUp')} 
-      onSignInPress={() => setCurrentScreen('signIn')} 
-      onProviderPress={() => setCurrentScreen('providerSelection')} />
-     )}
+      {currentScreen === 'selection' && (
+        <UserSelection 
+          onCustomerPress={() => setCurrentScreen('customerSignUp')} 
+          onSignInPress={() => setCurrentScreen('signIn')} 
+          onProviderPress={() => setCurrentScreen('providerSelection')} 
+        />
+      )}
 
-     {currentScreen === 'customerSignUp' && (
-      <CustomerSignUp 
-      onBack={() => setCurrentScreen('selection')}
-      onSignUpSuccess={() => setCurrentScreen('customerHome')}
-      onSignInPress={() => setCurrentScreen('signIn')}
-      />
-     )}
-     {/* 3. General SignIn Screen */}
+      {currentScreen === 'customerSignUp' && (
+        <CustomerSignUp 
+          onBack={() => setCurrentScreen('selection')}
+          onSignUpSuccess={() => {
+            setCustomerActiveTab('home');
+            setCurrentScreen('customerHome');
+          }}
+          onSignInPress={() => setCurrentScreen('signIn')}
+        />
+      )}
+
+      {/* 3. General SignIn Screen */}
       {currentScreen === 'signIn' && (
         <SignIn 
           onAdminLoginSuccess={() => setCurrentScreen('adminDashboard')}
           onBack={() => setCurrentScreen('selection')} 
-          
           onSignInSuccess={(role) => {
             if (role === 'customer') {
+              setCustomerActiveTab('home'); 
               setCurrentScreen('customerHome');
             } else if (role === 'mechanic') {
               setCurrentScreen('mechanicHome');
@@ -106,11 +120,12 @@ const App = () => {
             } else if (role === 'admin') {
               setCurrentScreen('adminDashboard');
             } else {
-              setCurrentScreen('selection'); // Fallback safe switch
+              setCurrentScreen('selection');
             }
           }}
         />
       )}
+
       {currentScreen === 'providerSelection' && (
         <ProviderSelection 
           onMechanicPress={() => setCurrentScreen('mechanicFlow')}
@@ -118,6 +133,7 @@ const App = () => {
           onSignInPress={() => setCurrentScreen('signIn')}
         />
       )}
+
       {currentScreen === 'mechanicFlow' && (
         <MechanicSignUpContainer 
           onBackToSelection={() => setCurrentScreen('providerSelection')} 
@@ -125,9 +141,11 @@ const App = () => {
           onSignUpSuccess={() => setCurrentScreen('mechanicHome')}
         />
       )}
+
       {currentScreen === 'mechanicHome' && (
         <MechanicHome onLogout={() => setCurrentScreen('signIn')} />
       )}
+
       {/* 6. Fuel Station Multi-Step Container Flow */}
       {currentScreen === 'fuelStationFlow' && (
         <FuelStationSignUpContainer 
@@ -136,21 +154,34 @@ const App = () => {
           onSignUpSuccess={() => setCurrentScreen('fuelStationHome')} 
         />
       )}
+
       {currentScreen === 'fuelStationHome' && (
         <FuelStationHome onLogout={() => setCurrentScreen('signIn')} />
       )}
+
       {currentScreen === 'pendingReview' && (
         <PendingReviewScreen 
           onBackToSignIn={() => setCurrentScreen('signIn')} 
         />
       )}
+
       {currentScreen === 'adminDashboard' && (
-        <AdminDashboard />
+        <AdminDashboard onLogout={() => setCurrentScreen('signIn')} />
       )}
-     {currentScreen === 'customerHome' && (
-      <CustomerHome onLogout={() => setCurrentScreen('signIn')} />
-     )}
-   </View>
- );
+
+      {/* 🟢 Updated Block: Isme purani extra screen skip ho gayi hai aur direct image selection synchronization apply kar di hai */}
+      {currentScreen === 'customerHome' && (
+        <CustomerHome 
+          onLogout={() => setCurrentScreen('signIn')} 
+          initialTab={customerActiveTab} 
+          profileImage={profileImage}
+          onEditProfilePress={(newImage) => {
+            setProfileImage(newImage); // Photo set hote hi global value refresh hogi, redirect nahi hoga
+          }}
+        />
+      )}
+    </View>
+  );
 };
-export default App
+
+export default App;

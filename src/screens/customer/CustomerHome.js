@@ -9,36 +9,41 @@ import CustomerProfile from './CustomerProfile';
 import { checkAndEnableLocation } from '../../services/locationService';
 import Geolocation from 'react-native-geolocation-service';
 
-const CustomerHome = ({ onLogout }) => {
+// 🟢 1. Props mein 'onEditProfilePress', 'initialTab', aur 'profileImage' receive kar liya hai
+const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('home');
+  
+  // 🟢 2. State ko dynamic banaya taake image update hone par active tab change na ho
+  const [activeTab, setActiveTab] = useState(initialTab || 'home');
+  
   const [locationActive, setLocationActive] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(true);
   const [coordinates, setCoordinates] = useState({ lat: 32.1877, lng: 74.1945 });
   const [debugMsg, setDebugMsg] = useState('Starting...');
-  // 2. Screen khultay hi location check karne ka function
+
+  // 2. Screen khultay hi location check karne ka function (100% Unchanged)
   useEffect(() => {
-  setDebugMsg("Step 1: useEffect fired");
+    setDebugMsg("Step 1: useEffect fired");
 
-  setTimeout(() => {
-    setDebugMsg("Step 2: Requesting location...");
+    setTimeout(() => {
+      setDebugMsg("Step 2: Requesting location...");
 
-    Geolocation.getCurrentPosition(
-      (position) => {
-        setDebugMsg("✅ Lat: " + position.coords.latitude + " Lng: " + position.coords.longitude);
-        setCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setCheckingLocation(false);
-      },
-      (error) => {
-        setDebugMsg("Code:" + error.code + " | " + error.message);
-        setCheckingLocation(false);
-      },
-      { enableHighAccuracy: false, timeout: 30000, maximumAge: 0 }
-    );
-  }, 1000);
-}, []);
+      Geolocation.getCurrentPosition(
+        (position) => {
+          setDebugMsg("✅ Lat: " + position.coords.latitude + " Lng: " + position.coords.longitude);
+          setCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude });
+          setCheckingLocation(false);
+        },
+        (error) => {
+          setDebugMsg("Code:" + error.code + " | " + error.message);
+          setCheckingLocation(false);
+        },
+        { enableHighAccuracy: false, timeout: 30000, maximumAge: 0 }
+      );
+    }, 1000);
+  }, []);
 
-  // 3. Jab tak check ho raha ho, tab tak full screen loading screen dikhayein
+  // 3. Jab tak check ho raha ho, tab tak full screen loading screen dikhayein (100% Unchanged)
   if (checkingLocation) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
@@ -48,7 +53,7 @@ const CustomerHome = ({ onLogout }) => {
     );
   }
 
-  // OpenStreetMap ki HTML Script (Leaflet JS use karte hue)
+  // OpenStreetMap ki HTML Script (100% Unchanged)
   const mapHtmlScript = `
     <!DOCTYPE html>
     <html>
@@ -66,7 +71,6 @@ const CustomerHome = ({ onLogout }) => {
     <body>
       <div id="map"></div>
       <script>
-        // Real coordinates smoothly integrated here
         var map = L.map('map').setView([${coordinates.lat}, ${coordinates.lng}], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
@@ -113,9 +117,19 @@ const CustomerHome = ({ onLogout }) => {
       ) : activeTab === 'orders' ? (
         <CustomerOrders />
       ) : (
-        <CustomerProfile />
+        /* 🟢 3. Yahan CustomerProfile ko naye sync props pass kar diye hain taake direct image trigger chal sake aur map reload na ho */
+        <CustomerProfile 
+          onLogout={onLogout} 
+          profileImage={profileImage}
+          onImageUpdate={(newImage) => {
+            if (onEditProfilePress) {
+              onEditProfilePress(newImage); 
+            }
+          }}
+        />
       )}
-      {/* Bottom Navigation (Hamesha visible rahegi) */}
+
+      {/* Bottom Navigation (Hamesha visible rahegi - 100% Unchanged) */}
       <View style={styles.bottomNav}>
         {/* Home Option */}
         <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={() => setActiveTab('home')}>
