@@ -7,31 +7,37 @@ import { COLORS } from '../../config/theme';
 import CustomerOrders from './CustomerOrders';
 import CustomerProfile from './CustomerProfile'; 
 import { checkAndEnableLocation } from '../../services/locationService';
+import Geolocation from 'react-native-geolocation-service';
 
 const CustomerHome = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('home');
   const [locationActive, setLocationActive] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(true);
-
+  const [coordinates, setCoordinates] = useState({ lat: 32.1877, lng: 74.1945 });
+  const [debugMsg, setDebugMsg] = useState('Starting...');
   // 2. Screen khultay hi location check karne ka function
   useEffect(() => {
-    const initLocationCheck = async () => {
-      const isLocationOn = await checkAndEnableLocation();
-      
-      if (isLocationOn) {
-        setLocationActive(true);
-        // Yahan aap apna map/coordinates fetch karne ka logic jo pehle se chal raha tha, chala sakti hain
-        console.log("Location active! Loading app data...");
-      } else {
-        setLocationActive(false);
-        // Agar user mana kar day to alert dikha sakte hain
-        Alert.alert("Location Off", "Please turn on your location to see nearest providers.");
-      }
-      setCheckingLocation(false);
-    };
-    initLocationCheck();
-  }, []);
+  setDebugMsg("Step 1: useEffect fired");
+
+  setTimeout(() => {
+    setDebugMsg("Step 2: Requesting location...");
+
+    Geolocation.getCurrentPosition(
+      (position) => {
+        setDebugMsg("✅ Lat: " + position.coords.latitude + " Lng: " + position.coords.longitude);
+        setCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setCheckingLocation(false);
+      },
+      (error) => {
+        setDebugMsg("Code:" + error.code + " | " + error.message);
+        setCheckingLocation(false);
+      },
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 0 }
+    );
+  }, 1000);
+}, []);
+
   // 3. Jab tak check ho raha ho, tab tak full screen loading screen dikhayein
   if (checkingLocation) {
     return (
@@ -60,16 +66,16 @@ const CustomerHome = () => {
     <body>
       <div id="map"></div>
       <script>
-        
-        var map = L.map('map').setView([32.1877, 74.1945], 13);
+        // Real coordinates smoothly integrated here
+        var map = L.map('map').setView([${coordinates.lat}, ${coordinates.lng}], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        L.marker([32.1877, 74.1945]).addTo(map)
-        .bindPopup('QuickFix Gujranwala Center')
-        .openPopup();
+        L.marker([${coordinates.lat}, ${coordinates.lng}]).addTo(map)
+          .bindPopup('You are here')
+          .openPopup();
       </script>
     </body>
     </html>
