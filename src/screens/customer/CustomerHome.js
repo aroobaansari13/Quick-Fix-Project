@@ -1,15 +1,46 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StatusBar, Alert, ActivityIndicator} from 'react-native';
 import { WebView } from 'react-native-webview';
 import { styles } from './CustomerHome.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../config/theme';
 import CustomerOrders from './CustomerOrders';
 import CustomerProfile from './CustomerProfile'; 
+import { checkAndEnableLocation } from '../../services/locationService';
 
 const CustomerHome = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('home');
+  const [locationActive, setLocationActive] = useState(false);
+  const [checkingLocation, setCheckingLocation] = useState(true);
+
+  // 2. Screen khultay hi location check karne ka function
+  useEffect(() => {
+    const initLocationCheck = async () => {
+      const isLocationOn = await checkAndEnableLocation();
+      
+      if (isLocationOn) {
+        setLocationActive(true);
+        // Yahan aap apna map/coordinates fetch karne ka logic jo pehle se chal raha tha, chala sakti hain
+        console.log("Location active! Loading app data...");
+      } else {
+        setLocationActive(false);
+        // Agar user mana kar day to alert dikha sakte hain
+        Alert.alert("Location Off", "Please turn on your location to see nearest providers.");
+      }
+      setCheckingLocation(false);
+    };
+    initLocationCheck();
+  }, []);
+  // 3. Jab tak check ho raha ho, tab tak full screen loading screen dikhayein
+  if (checkingLocation) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#10B981" />
+        <Text style={{ marginTop: 10, color: '#64748B', fontWeight: '500' }}>Checking location settings...</Text>
+      </View>
+    );
+  }
 
   // OpenStreetMap ki HTML Script (Leaflet JS use karte hue)
   const mapHtmlScript = `

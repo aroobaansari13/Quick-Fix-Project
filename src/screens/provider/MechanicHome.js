@@ -1,20 +1,38 @@
-import React, { useState } from 'react'; 
-import { View, Text, TouchableOpacity, StatusBar, Image, ScrollView, Modal, TextInput, FlatList } from 'react-native';
+import React, { useEffect, useState } from 'react'; 
+import { View, Text, TouchableOpacity, StatusBar, Image, ScrollView, Modal, TextInput, FlatList, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './MechanicHome.styles';
 import ProviderOrders from './ProviderOrders';
 import ProviderProfile from './ProviderProfile';
+import { checkAndEnableLocation } from '../../services/locationService';
 
 const MechanicHome = () => {
   const [activeTab, setActiveTab] = useState('home');
-
-  // 🟢 States for Form and Services
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]); // Services array list
   const [serviceName, setServiceName] = useState('');
   const [servicePrice, setServicePrice] = useState('');
   const [serviceDesc, setServiceDesc] = useState('');
   const [editingServiceId, setEditingServiceId] = useState(null);
+  const [locationActive, setLocationActive] = useState(false);
+  const [checkingLocation, setCheckingLocation] = useState(true);
+
+  useEffect(() => {
+    const initLocationCheck = async () => {
+      const isLocationOn = await checkAndEnableLocation();
+      if (isLocationOn) {
+        setLocationActive(true);
+        // 🟢 Yahan aap apna map/coordinates fetch karne ka logic jo pehle se chal raha tha, chala sakti hain
+        console.log("Location active! Loading app data...");
+      } else {
+        setLocationActive(false);
+        // Agar user mana kar day to alert dikha sakte hain
+        Alert.alert("Location Off", "Please turn on your location to see nearest providers.");
+      }
+      setCheckingLocation(false);
+    };
+    initLocationCheck();
+  }, []);
 
   const handleEditClick = (item) => {
     setEditingServiceId(item.id);
@@ -115,6 +133,17 @@ const MechanicHome = () => {
     }
   };
 
+  // 3. Jab tak check ho raha ho, tab tak full screen loading screen dikhayein
+  if (checkingLocation) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#10B981" />
+        <Text style={{ marginTop: 10, color: '#64748B', fontWeight: '500' }}>Checking location settings...</Text>
+      </View>
+    );
+  }
+
+  // 4. Main interface layout return block
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
@@ -140,7 +169,7 @@ const MechanicHome = () => {
         {renderContent()}
       </View>
 
-      {/* 3. CENTER PLUS BUTTON (Clickable banaya hai) */}
+      {/* 3. CENTER PLUS BUTTON */}
       {activeTab === 'home' && (
         <TouchableOpacity 
           style={styles.floatingAddButton} 
