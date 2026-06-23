@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './MechanicSignUpStep2.styles';
 import { registerUserInFirebase } from '../../../services/authService';
 import { launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }) => {
   const [workshopName, setWorkshopName] = useState('');
@@ -81,8 +82,11 @@ const MechanicSignUpStep2 = ({step1Data, onSignUpFinish, onBack, onSignInPress }
         combinedAdditionalData,
         'mechanic'
       );
-      setLoading(false);
       if (result.success) {
+        const currentTimestamp = Date.now().toString();
+        await AsyncStorage.setItem('userRole', 'mechanic');
+        await AsyncStorage.setItem('lastActive', currentTimestamp);
+        setLoading(false);
         if (onSignUpFinish) {
           onSignUpFinish();
         }

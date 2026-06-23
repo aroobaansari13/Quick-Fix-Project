@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StatusBar, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './SignIn.styles';
-import { COLORS } from '../config/theme'; // Global blue theme load karne ke liye
+import { COLORS } from '../config/theme';
 import { ADMIN_CREDENTIALS } from '../config/adminConfig';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack }) => {
   const [email, setEmail] = useState('');
@@ -13,37 +14,51 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const handleLoginSuccess = async (userRole) => {
+    try {
+      // ✅ AsyncStorage mein role aur time save karo
+      await AsyncStorage.setItem('userRole', userRole);
+      await AsyncStorage.setItem('lastActive', Date.now().toString());
+      // ✅ App.js ko batao ke kaunsi screen par jao
+      if (onSignInSuccess) {
+        onSignInSuccess(userRole);
+      }
+    } catch (error) {
+      console.log("Storage Error:", error);
+    }
+  };
+
   const handleLogin = async () => {
     if (!email || !password || email.trim() === '') {
       Alert.alert("Error", "Please fill all fields");
       return;
     }
 
-    const cleanEmail = email.trim().toLowerCase(); 
-    // 2. Admin Login Verification
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Admin Login Check
     if (ADMIN_CREDENTIALS && ADMIN_CREDENTIALS.email) {
       if (cleanEmail === ADMIN_CREDENTIALS.email.toLowerCase() && password === ADMIN_CREDENTIALS.password) {
-        if (onAdminLoginSuccess) {
-          onAdminLoginSuccess();
-        }
+        // ✅ Admin ke liye bhi AsyncStorage save karo
+        await AsyncStorage.setItem('userRole', 'admin');
+        await AsyncStorage.setItem('lastActive', Date.now().toString());
+        if (onAdminLoginSuccess) onAdminLoginSuccess();
         return;
       }
     }
+
     setLoading(true);
     try {
-      // 3. Firebase Auth Sign In
       const userCredential = await auth().signInWithEmailAndPassword(cleanEmail, password);
       const uid = userCredential.user.uid;
-      // 3. Fetch specific user role from Firestore collection
+
       const userDoc = await firestore().collection('Users').doc(uid).get();
       setLoading(false);
+
       if (userDoc.exists) {
         const userData = userDoc.data();
-        const userRole = userData.role; // 'customer', 'mechanic', 'fuel_station'
-
-        if (onSignInSuccess) {
-          onSignInSuccess(userRole);
-        }
+        const userRole = userData.role;
+        await handleLoginSuccess(userRole); // ✅ Ab yeh call ho raha hai
       } else {
         Alert.alert("Error", "User details not found in database.");
       }
@@ -52,11 +67,10 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
       Alert.alert("Login Failed", error.message);
     }
   };
+
   return (
     <View style={styles.container}>
-      {/* White background status bar */}
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-      {/* Back Button to return to UserSelection */}
       {onBack && (
         <TouchableOpacity style={{ position: 'absolute', top: 50, left: 20, zIndex: 10 }} onPress={onBack}>
           <Icon name="arrow-back" size={24} color="#333" />
@@ -107,7 +121,6 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
               onChangeText={setPassword}
               editable={!loading}
             />
-            {/* Eye Icon to Toggle Password Visibility */}
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Icon 
                 name={showPassword ? "eye-off-outline" : "eye-outline"} 
@@ -117,12 +130,12 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
             </TouchableOpacity>
           </View>
 
-          {/* Forgot Password Link */}
+          {/* Forgot Password */}
           <TouchableOpacity style={styles.forgotPasswordContainer} activeOpacity={0.7}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* 3. Sign In Button */}
+          {/* Sign In Button */}
           <TouchableOpacity 
             style={[styles.signInButton, loading && { opacity: 0.7 }]} 
             activeOpacity={0.8} 
@@ -138,7 +151,7 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
 
         </View>
 
-        {/* 4. Footer Section (Don't have an account?) */}
+        {/* 4. Footer Section */}
         <View style={styles.footerSection}>
           <Text style={styles.footerText}>Don't have an account? </Text>
           <TouchableOpacity activeOpacity={0.7}>

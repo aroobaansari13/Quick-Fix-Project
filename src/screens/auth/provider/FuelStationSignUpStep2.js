@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './FuelStationSignUpStep2.styles';
 import { registerUserInFirebase } from '../../../services/authService';
 import { launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress }) => {
   const [stationName, setStationName] = useState('');
@@ -79,8 +80,11 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
         combinedAdditionalData,
         'fuel_station'
       );
-      setLoading(false);
       if (result.success) {
+        const currentTimestamp = Date.now().toString();
+        await AsyncStorage.setItem('userRole', 'fuel_station');
+        await AsyncStorage.setItem('lastActive', currentTimestamp);
+        setLoading(false);
         if (onSignUpFinish) {
           onSignUpFinish();
         }

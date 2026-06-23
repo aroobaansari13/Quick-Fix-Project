@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { styles } from './CustomerSignUp.styles';
 import { registerUserInFirebase } from '../../../services/authService';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ Added
 
 const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
 
@@ -24,7 +25,6 @@ const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
-    // Validation
     if (!name || !email || !address || !phone || !password) {
       Alert.alert('Error', 'Please fill all compulsory fields!');
       return;
@@ -55,7 +55,10 @@ const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
 
     setLoading(false);
 
-   if (result.success) {
+    if (result.success) {
+      // ✅ Session save karo taake baar baar login na maange
+      await AsyncStorage.setItem('userRole', 'customer');
+      await AsyncStorage.setItem('lastActive', Date.now().toString());
       if (onSignUpSuccess) {
         onSignUpSuccess();
       }
