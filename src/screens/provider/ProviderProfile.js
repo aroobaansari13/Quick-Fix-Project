@@ -1,11 +1,38 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StatusBar, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StatusBar, ScrollView, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../config/theme';
 import { styles } from './ProviderProfile.styles';
+import auth from '@react-native-firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProviderProfile = ({ onLogout }) => {
-  
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Do you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await auth().signOut();
+              await AsyncStorage.removeItem('userRole');
+              await AsyncStorage.removeItem('lastActive');
+              if (onLogout) onLogout();
+            } catch (error) {
+              console.log("Logout Error:", error);
+              Alert.alert("Error", "Logout failed. Please try again.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const MenuItem = ({ icon, title, onPress, color = '#333' }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.menuItemLeft}>
@@ -37,7 +64,6 @@ const ProviderProfile = ({ onLogout }) => {
           </View>
         </View>
 
-        {/* Menu Options Section */}
         <View style={styles.menuSection}>
           <MenuItem icon="business-outline" title="Business Details" onPress={() => {}} />
           <MenuItem icon="settings-outline" title="Settings & Availability" onPress={() => {}} />
@@ -49,7 +75,7 @@ const ProviderProfile = ({ onLogout }) => {
             icon="log-out-outline" 
             title="Logout Account" 
             color="#FF4D4D" 
-            onPress={onLogout} 
+            onPress={handleLogout}
           />
         </View>
       </ScrollView>

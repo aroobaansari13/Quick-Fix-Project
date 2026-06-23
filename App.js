@@ -6,12 +6,12 @@ import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
 import CustomerHome from './src/screens/customer/CustomerHome';
 import SignIn from './src/screens/SignIn';
 import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
-import MechanicSignUpContainer from './src/screens/auth/provider/MechanicSignUpContainer';
+import MechanicSignUpContainer from './src/screens/auth/provider/mechanic/MechanicSignUpContainer';
 import AdminDashboard from './src/screens/admin/AdminDashboard';
 import PendingReviewScreen from './src/screens/auth/provider/PendingReviewScreen';
-import MechanicHome from './src/screens/provider/MechanicHome';
-import FuelStationSignUpContainer from './src/screens/auth/provider/FuelStationSignUpContainer';
-import FuelStationHome from './src/screens/provider/FuelStationHome';
+import MechanicHome from './src/screens/provider/mechanic/MechanicHome';
+import FuelStationSignUpContainer from './src/screens/auth/provider/fuel/FuelStationSignUpContainer';
+import FuelStationHome from './src/screens/provider/fuel/FuelStationHome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
 
@@ -126,7 +126,7 @@ const App = () => {
         />
       )}
       {currentScreen === 'mechanicHome' && (
-        <MechanicHome />
+        <MechanicHome onLogout={() => setCurrentScreen('signIn')} />
       )}
       {/* 6. Fuel Station Multi-Step Container Flow */}
       {currentScreen === 'fuelStationFlow' && (
@@ -137,7 +137,7 @@ const App = () => {
         />
       )}
       {currentScreen === 'fuelStationHome' && (
-        <FuelStationHome />
+        <FuelStationHome onLogout={() => setCurrentScreen('signIn')} />
       )}
       {currentScreen === 'pendingReview' && (
         <PendingReviewScreen 
@@ -145,12 +145,10 @@ const App = () => {
         />
       )}
       {currentScreen === 'adminDashboard' && (
-        <AdminDashboard 
-         onLogout={() => setCurrentScreen('signIn')} 
-        />
+        <AdminDashboard />
       )}
      {currentScreen === 'customerHome' && (
-      <CustomerHome />
+      <CustomerHome onLogout={() => setCurrentScreen('signIn')} />
      )}
    </View>
  );

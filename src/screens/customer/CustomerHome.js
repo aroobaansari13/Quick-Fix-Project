@@ -9,7 +9,7 @@ import CustomerProfile from './CustomerProfile';
 import { checkAndEnableLocation } from '../../services/locationService';
 import Geolocation from 'react-native-geolocation-service';
 
-const CustomerHome = () => {
+const CustomerHome = ({ onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('home');
   const [locationActive, setLocationActive] = useState(false);

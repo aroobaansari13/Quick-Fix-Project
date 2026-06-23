@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'; 
 import { View, Text, TouchableOpacity, StatusBar, Image, ScrollView, Modal, TextInput, FlatList, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { styles } from './MechanicHome.styles';
-import ProviderOrders from './ProviderOrders';
-import ProviderProfile from './ProviderProfile';
-import { checkAndEnableLocation } from '../../services/locationService';
+import { styles } from '../mechanic/MechanicHome.styles';
+import ProviderOrders from '../ProviderOrders';
+import ProviderProfile from '../ProviderProfile';
+import { checkAndEnableLocation } from '../../../services/locationService';
 
 const MechanicHome = () => {
   const [activeTab, setActiveTab] = useState('home');

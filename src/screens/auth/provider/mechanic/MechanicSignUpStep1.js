@@ -10,7 +10,7 @@ import {
   StatusBar,
   Alert
 } from 'react-native';
-import { styles } from './MechanicSignUpStep1.styles';
+import { styles } from '../mechanic/MechanicSignUpStep1.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 // Image Picker Import
 import { launchImageLibrary } from 'react-native-image-picker';

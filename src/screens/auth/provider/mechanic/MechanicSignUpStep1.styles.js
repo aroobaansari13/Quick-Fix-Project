@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS } from '../../../config/theme';
+import { COLORS } from '../../../../config/theme';
 
 export const styles = StyleSheet.create({
   container: {
@@ -19,7 +19,7 @@ export const styles = StyleSheet.create({
   },
   subText: {
     fontSize: 14,
-    color: COLORS.primary, // Your Global Dark Blue Theme
+    color: COLORS.primary,
     fontWeight: '600',
     marginTop: 4,
     marginBottom: 25,
@@ -78,11 +78,12 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  // 🟢 In styles ko file ke end par add kar dein
   imageUploadRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
-    gap: 15,
+    gap: 15, // Dono boxes ke darmiyan gap
   },
   imageUploadBox: {
     flex: 1,
@@ -90,11 +91,15 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderWidth: 1.5,
     borderColor: '#CBD5E1',
-    borderStyle: 'dashed',
+    borderStyle: 'dashed', // 👈 Is se border lines dotted/dashed ho jayengi jese upload boxes ki hoti hain
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 10,
+  },
+  uploadIcon: {
+    fontSize: 22,
+    marginBottom: 5,
   },
   uploadText: {
     fontSize: 12,

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { styles } from './FuelStationHome.styles';
-import ProviderOrders from './ProviderOrders';
-import ProviderProfile from './ProviderProfile';
-import { checkAndEnableLocation } from '../../services/locationService';
+import { styles } from '../fuel/FuelStationHome.styles';
+import ProviderOrders from '../ProviderOrders';
+import ProviderProfile from '../ProviderProfile';
+import { checkAndEnableLocation } from '../../../services/locationService';
 
 const FuelStationHome = () => {
   const [activeTab, setActiveTab] = useState('home');

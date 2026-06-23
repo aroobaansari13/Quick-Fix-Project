@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import FuelStationSignUpStep1 from './FuelStationSignUpStep1';
-import FuelStationSignUpStep2 from './FuelStationSignUpStep2';
+import FuelStationSignUpStep1 from '../fuel/FuelStationSignUpStep1';
+import FuelStationSignUpStep2 from '../fuel/FuelStationSignUpStep2';
 
 const FuelStationSignUpContainer = ({ onBackToSelection, onSignInPress, onSignUpSuccess }) => {
   const [fuelStationData, setFuelStationData] = useState(null);

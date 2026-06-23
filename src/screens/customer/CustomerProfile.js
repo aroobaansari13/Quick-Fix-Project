@@ -1,11 +1,38 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StatusBar, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StatusBar, ScrollView, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './CustomerProfile.styles';
 import { COLORS } from '../../config/theme';
+import auth from '@react-native-firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CustomerProfile = () => {
+const CustomerProfile = ({ onLogout }) => {
   
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Do you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await auth().signOut();
+              await AsyncStorage.removeItem('userRole');
+              await AsyncStorage.removeItem('lastActive');
+              if (onLogout) onLogout();
+            } catch (error) {
+              console.log("Logout Error:", error);
+              Alert.alert("Error", "Logout failed. Please try again.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   // Menu Item Reusable Component
   const MenuItem = ({ icon, title, onPress, color = '#333' }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
@@ -24,16 +51,12 @@ const CustomerProfile = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 1. Header & Profile Image Section */}
         <View style={styles.header}>
-          {/* <Text style={styles.headerTitle}>Profile</Text> */}
-          
           <View style={styles.profileImageContainer}>
             <View style={styles.imageWrapper}>
-              {/* Default Placeholder Image */}
               <Image 
                 source={{ uri: 'https://via.placeholder.com/150' }} 
                 style={styles.profileImage} 
               />
-              {/* Edit Icon Overlay */}
               <TouchableOpacity style={styles.editBadge} activeOpacity={0.9}>
                 <Icon name="camera" size={16} color="#FFF" />
               </TouchableOpacity>
@@ -55,7 +78,7 @@ const CustomerProfile = () => {
             icon="log-out-outline" 
             title="Logout" 
             color="#FF4D4D" 
-            onPress={() => {}} 
+            onPress={handleLogout} // ✅ Connected
           />
         </View>
       </ScrollView>

@@ -12,8 +12,8 @@ import {
   Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { styles } from './MechanicSignUpStep2.styles';
-import { registerUserInFirebase } from '../../../services/authService';
+import { styles } from '../mechanic/MechanicSignUpStep2.styles';
+import { registerUserInFirebase } from '../../../../services/authService';
 import { launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
