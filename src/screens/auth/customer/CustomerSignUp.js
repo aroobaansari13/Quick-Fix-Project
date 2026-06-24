@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { styles } from './CustomerSignUp.styles';
 import { registerUserInFirebase } from '../../../services/authService';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ Added
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
 
@@ -56,7 +56,6 @@ const CustomerSignUp = ({ onBack, onSignUpSuccess, onSignInPress }) => {
     setLoading(false);
 
     if (result.success) {
-      // ✅ Session save karo taake baar baar login na maange
       await AsyncStorage.setItem('userRole', 'customer');
       await AsyncStorage.setItem('lastActive', Date.now().toString());
       if (onSignUpSuccess) {

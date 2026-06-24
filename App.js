@@ -14,6 +14,7 @@ import FuelStationSignUpContainer from './src/screens/auth/provider/fuel/FuelSta
 import FuelStationHome from './src/screens/provider/fuel/FuelStationHome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
+import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -21,7 +22,6 @@ const App = () => {
   const [currentScreen, setCurrentScreen] = useState('selection');
 
   useEffect(() => {
-  // Firebase ka apna state listener
   const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
     if (!isShowSplash) {
       try {
@@ -41,9 +41,8 @@ const App = () => {
             await AsyncStorage.setItem('lastActive', currentTime.toString());
             
             if (userRole === 'customer') setCurrentScreen('customerHome');
-            else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
-            else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
-            else if (userRole === 'admin') setCurrentScreen('adminDashboard');
+              else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
+              else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
             else setCurrentScreen('selection');
           }
         } else {
@@ -122,7 +121,14 @@ const App = () => {
         <MechanicSignUpContainer 
           onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
-          onSignUpSuccess={() => setCurrentScreen('mechanicHome')}
+          // 👇 Is callback ko parameter accept karne ke liye update kiya
+          onSignUpSuccess={(targetScreen) => {
+            if (targetScreen === 'pendingReview') {
+               setCurrentScreen('pendingReview'); // 🔄 Ab yeh direct pending screen par jayega!
+            } else {
+                setCurrentScreen('mechanicHome');
+              }
+          }}
         />
       )}
       {currentScreen === 'mechanicHome' && (
@@ -145,7 +151,14 @@ const App = () => {
         />
       )}
       {currentScreen === 'adminDashboard' && (
-        <AdminDashboard />
+        <AdminDashboard 
+        onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
+        />
+      )}
+      {currentScreen === 'pendingAppsList' && (
+        <AdminPendingApplications 
+        onBack={() => setCurrentScreen('adminDashboard')} 
+        />
       )}
      {currentScreen === 'customerHome' && (
       <CustomerHome onLogout={() => setCurrentScreen('signIn')} />
