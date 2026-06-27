@@ -2,8 +2,8 @@
  * @format
  */
 import app from '@react-native-firebase/app';
-// import { LogBox } from 'react-native';
-// LogBox.ignoreLogs(['This method is deprecated']);
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(['This method is deprecated']);
 
 if (!app.apps.length) {
   app.initializeApp();
