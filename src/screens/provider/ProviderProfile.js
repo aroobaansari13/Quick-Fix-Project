@@ -25,7 +25,6 @@ const ProviderProfile = ({ onLogout }) => {
               if (onLogout) onLogout();
             } catch (error) {
               console.log("Logout Error:", error);
-              Alert.alert("Error", "Logout failed. Please try again.");
             }
           }
         }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text, Alert } from 'react-native';
 import SplashScreen from './src/screens/splash/SplashScreen';
 import UserSelection from './src/screens/auth/UserSelection';
 import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
@@ -14,76 +14,35 @@ import FuelStationSignUpContainer from './src/screens/auth/provider/fuel/FuelSta
 import FuelStationHome from './src/screens/provider/fuel/FuelStationHome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore'; 
 import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
   const [currentScreen, setCurrentScreen] = useState('selection');
-  
-  // 🟢 Global Image State: Photo ko state mein manage karne ke liye
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
-  
-  // 🟢 Tab Tracker State: Isse track hoga ke CustomerHome open hote hi kaun sa tab kholna hai
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
 
   useEffect(() => {
-  const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
-    if (!isShowSplash) {
-      try {
-        const userRole = await AsyncStorage.getItem('userRole');
-        const lastActiveStr = await AsyncStorage.getItem('lastActive');
-
-          if (currentUser && userRole && lastActiveStr) {
-            const lastActive = parseInt(lastActiveStr, 10);
-            const currentTime = Date.now();
-            const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
-
-            if (currentTime - lastActive > ONE_MONTH_MS) {
-              await auth().signOut();
-              await AsyncStorage.multiRemove(['userRole', 'lastActive']);
-              setCurrentScreen('signIn');
-            } else {
-              await AsyncStorage.setItem('lastActive', currentTime.toString());
-              
-              if (userRole === 'customer') {
-                setCustomerActiveTab('home'); // Login par default map (home) khule
-                setCurrentScreen('customerHome');
-              }
-              else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
-              else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
-              else if (userRole === 'admin') setCurrentScreen('adminDashboard');
-              else setCurrentScreen('selection');
-            }
-          } else {
-            await AsyncStorage.setItem('lastActive', currentTime.toString());
-            
-            if (userRole === 'customer') setCurrentScreen('customerHome');
-              else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
-              else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
-            else setCurrentScreen('selection');
-          }
-        } catch (error) {
-          console.log("Session Error:", error);
-          setCurrentScreen('selection');
-        } finally {
-          setIsSessionChecking(false);
-        }
+    const unsubscribe = auth().onAuthStateChanged((user) => {
+      if (isShowSplash) return;
+      if (!user) {
+        setCurrentScreen('selection');
       }
+      setIsSessionChecking(false);
     });
-
-    return () => unsubscribe(); // clean up listener
+    return () => unsubscribe();
   }, [isShowSplash]);
-
   if (isShowSplash) {
     return <SplashScreen onFinish={() => setIsShowSplash(false)} />;
   }
-
+  
   if (isSessionChecking) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <ActivityIndicator size="large" color="#10B981" />
-        <Text style={{ marginTop: 10, color: '#64748B', fontWeight: '500' }}>Configuring profile context...</Text>
+        <Text style={{ marginTop: 10, color: '#64748B', fontWeight: '500' }}>Verifying Identity Securely...</Text>
       </View>
     );
   }
@@ -109,24 +68,14 @@ const App = () => {
         />
       )}
 
-      {/* 3. General SignIn Screen */}
       {currentScreen === 'signIn' && (
         <SignIn 
           onAdminLoginSuccess={() => setCurrentScreen('adminDashboard')}
           onBack={() => setCurrentScreen('selection')} 
-          onSignInSuccess={(role) => {
-            if (role === 'customer') {
-              setCustomerActiveTab('home'); 
-              setCurrentScreen('customerHome');
-            } else if (role === 'mechanic') {
-              setCurrentScreen('mechanicHome');
-            } else if (role === 'fuel_station') {
-              setCurrentScreen('fuelStationHome');
-            } else if (role === 'admin') {
-              setCurrentScreen('adminDashboard');
-            } else {
-              setCurrentScreen('selection');
-            }
+          onSignInSuccess={(screenName) => {
+          // AuthManager jo string return karega (e.g., 'mechanicHome'), 
+          // ye seedha yahan mil jayega aur screen update ho jayegi
+          setCurrentScreen(screenName);
           }}
         />
       )}
@@ -143,13 +92,12 @@ const App = () => {
         <MechanicSignUpContainer 
           onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
-          // 👇 Is callback ko parameter accept karne ke liye update kiya
           onSignUpSuccess={(targetScreen) => {
             if (targetScreen === 'pendingReview') {
-               setCurrentScreen('pendingReview'); // 🔄 Ab yeh direct pending screen par jayega!
+               setCurrentScreen('pendingReview');
             } else {
                 setCurrentScreen('mechanicHome');
-              }
+            }
           }}
         />
       )}
@@ -158,12 +106,17 @@ const App = () => {
         <MechanicHome onLogout={() => setCurrentScreen('signIn')} />
       )}
 
-      {/* 6. Fuel Station Multi-Step Container Flow */}
       {currentScreen === 'fuelStationFlow' && (
         <FuelStationSignUpContainer 
           onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
-          onSignUpSuccess={() => setCurrentScreen('fuelStationHome')} 
+          onSignUpSuccess={(targetScreen) => {
+            if (targetScreen === 'pendingReview') {
+              setCurrentScreen('pendingReview'); 
+            } else {
+              setCurrentScreen('fuelStationHome'); 
+            }
+          }} 
         />
       )}
 
@@ -173,29 +126,34 @@ const App = () => {
 
       {currentScreen === 'pendingReview' && (
         <PendingReviewScreen 
-          onBackToSignIn={() => setCurrentScreen('signIn')} 
+          onBackToSignIn={async () => {
+            try {
+              await auth().signOut(); 
+              await AsyncStorage.multiRemove(['userRole', 'lastActive']);
+            } catch (e) { console.log(e); }
+            setCurrentScreen('signIn');
+          }} 
         />
       )}
 
       {currentScreen === 'adminDashboard' && (
         <AdminDashboard 
-        onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
+          onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
         />
       )}
       {currentScreen === 'pendingAppsList' && (
         <AdminPendingApplications 
-        onBack={() => setCurrentScreen('adminDashboard')} 
+          onBack={() => setCurrentScreen('adminDashboard')} 
         />
       )}
 
-      {/* 🟢 Updated Block: Isme purani extra screen skip ho gayi hai aur direct image selection synchronization apply kar di hai */}
       {currentScreen === 'customerHome' && (
         <CustomerHome 
           onLogout={() => setCurrentScreen('signIn')} 
           initialTab={customerActiveTab} 
           profileImage={profileImage}
           onEditProfilePress={(newImage) => {
-            setProfileImage(newImage); // Photo set hote hi global value refresh hogi, redirect nahi hoga
+            setProfileImage(newImage); 
           }}
         />
       )}

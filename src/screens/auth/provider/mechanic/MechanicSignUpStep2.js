@@ -14,6 +14,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from '../mechanic/MechanicSignUpStep2.styles';
 import { launchImageLibrary } from 'react-native-image-picker';
+import auth from '@react-native-firebase/auth'; 
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -63,14 +64,22 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
     setLoading(true);
 
     try {
-      await firestore().collection('PendingApplications').add({
+      // 1. Create User Account in Firebase Authentication
+      const userCredential = await auth().createUserWithEmailAndPassword(
+        step1Data.email.trim().toLowerCase(),
+        step1Data.password
+      );
+      const uid = userCredential.user.uid; 
+
+      await firestore().collection('Mechanics').doc(uid).set({
+        uid: uid,
         name: step1Data.name || 'Unknown Provider',
         email: step1Data.email.trim().toLowerCase(),
         password: step1Data.password,
         phone: step1Data.phone || 'N/A',
         username: step1Data.username || '',
         role: 'mechanic',
-        status: 'pending',
+        status: 'pending', 
         createdAt: firestore.FieldValue.serverTimestamp(),
         cnic: step1Data.cnic || 'N/A',
         profilePicture: step1Data.profilePicUrl || workshopPic.uri || '',
@@ -84,11 +93,13 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
         }
       });
 
+      await auth().signOut();
+      await AsyncStorage.setItem('userRole', 'pendingReview');
+      await AsyncStorage.setItem('lastActive', Date.now().toString());
       setLoading(false);
-      
       Alert.alert(
         "Application Submitted", 
-        "Your registration request has been successfully sent to the Admin for approval.",
+        "Your registration request has been successfully sent to the Admin for approval. You can log in once approved.",
         [
           { 
             text: "OK", 
@@ -103,7 +114,7 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
 
     } catch (error) {
       setLoading(false);
-      console.log("Mechanic Step 2 Pending Submission Crash Block:", error);
+      console.log("Mechanic Step 2 Status Flag Crash Block:", error);
       Alert.alert("Submission Failed", error.message);
     }
   };
@@ -194,7 +205,7 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
             </Text>
           </TouchableOpacity>
 
-          {/* Specializations (Optional) */}
+          {/* Specializations */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Specializations (Optional)</Text>
             <View style={[styles.fieldWrapper, { height: 80, alignItems: 'flex-start', paddingTop: 10 }]}>

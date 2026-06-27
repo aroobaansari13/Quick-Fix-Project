@@ -7,6 +7,7 @@ import { ADMIN_CREDENTIALS } from '../config/adminConfig';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthManager } from '../services/AuthManager';
 
 const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack }) => {
   const [email, setEmail] = useState('');
@@ -27,42 +28,31 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
   };
 
   const handleLogin = async () => {
-    if (!email || !password || email.trim() === '') {
-      Alert.alert("Error", "Please fill all fields");
-      return;
-    }
+  if (!email || !password || email.trim() === '') {
+    Alert.alert("Error", "Please fill all fields");
+    return;
+  }
 
-    const cleanEmail = email.trim().toLowerCase();
-
-    if (ADMIN_CREDENTIALS && ADMIN_CREDENTIALS.EMAIL) {
-      if (cleanEmail === ADMIN_CREDENTIALS.EMAIL.toLowerCase() && password === ADMIN_CREDENTIALS.PASSWORD) {
-        setLoading(true);
-        setLoading(false);
-        if (onAdminLoginSuccess) onAdminLoginSuccess();
+  setLoading(true);
+  try {
+    // Admin check pehle hi rehne dein jaisa aapka tha
+    if (email.trim().toLowerCase() === ADMIN_CREDENTIALS.EMAIL.toLowerCase() && password === ADMIN_CREDENTIALS.PASSWORD) {
+        onAdminLoginSuccess();
         return;
-      }
     }
-    setLoading(true);
-    try {
-      const userCredential = await auth().signInWithEmailAndPassword(cleanEmail, password);
-      const uid = userCredential.user.uid;
 
-      const userDoc = await firestore().collection('Users').doc(uid).get();
-      setLoading(false);
-
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        const userRole = userData.role;
-        await handleLoginSuccess(userRole);
-      } else {
-        Alert.alert("Error", "User details not found in database.");
-      }
-    } catch (error) {
-      setLoading(false);
-      Alert.alert("Login Failed", error.message);
-    }
+    // Naya flow: AuthManager ko use karein
+    const screenName = await AuthManager.loginAndGetRole(email.trim().toLowerCase(), password);
+    
+    // Success hone par ye App.js ko screen name bhej dega
+    onSignInSuccess(screenName); 
+    
+  } catch (error) {
+    Alert.alert("Login Failed", error.message);
+  } finally {
+    setLoading(false);
+  }
   };
-
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
@@ -72,7 +62,6 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
         </TouchableOpacity>
       )}
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* 1. Header Section */}
         <View style={styles.headerSection}>
           <Image 
             source={require('../assets/logo1.png')} 
@@ -83,10 +72,7 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
           <Text style={styles.subText}>Sign in to continue to QuickFix</Text>
         </View>
 
-        {/* 2. Input Fields Form */}
         <View style={styles.formSection}>
-          
-          {/* Email Input */}
           <Text style={styles.inputLabel}>Email Address</Text>
           <View style={styles.inputContainer}>
             <Icon name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
@@ -102,7 +88,6 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
             />
           </View>
 
-          {/* Password Input */}
           <Text style={styles.inputLabel}>Password</Text>
           <View style={styles.inputContainer}>
             <Icon name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
@@ -117,43 +102,30 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
               editable={!loading}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Icon 
-                name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                size={20} 
-                color="#888" 
-              />
+              <Icon name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#888" />
             </TouchableOpacity>
           </View>
 
-          {/* Forgot Password */}
           <TouchableOpacity style={styles.forgotPasswordContainer} activeOpacity={0.7}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* Sign In Button */}
           <TouchableOpacity 
             style={[styles.signInButton, loading && { opacity: 0.7 }]} 
             activeOpacity={0.8} 
             onPress={handleLogin}
             disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.signInButtonText}>Sign In</Text>
-            )}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.signInButtonText}>Sign In</Text>}
           </TouchableOpacity>
-
         </View>
 
-        {/* 4. Footer Section */}
         <View style={styles.footerSection}>
           <Text style={styles.footerText}>Don't have an account? </Text>
           <TouchableOpacity activeOpacity={0.7} onPress={onSignUpPress}>
             <Text style={styles.signUpLinkText}>Sign Up</Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
     </View>
   );
