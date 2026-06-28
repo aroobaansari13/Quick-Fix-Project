@@ -9,14 +9,14 @@ export const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 15,
+    paddingBottom: 10,
     backgroundColor: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#333333',
-    marginTop: 20
+    marginTop: 30
   },
   tabContainer: {
     flexDirection: 'row',

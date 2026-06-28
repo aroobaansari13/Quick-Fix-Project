@@ -89,6 +89,7 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
   };
 
   // Logout Function
+  // Logout Function
   const handleLogout = async () => {
     Alert.alert("Logout", "Do you want to logout?", [
       { text: "Cancel", style: "cancel" },
@@ -97,11 +98,17 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
         style: "destructive",
         onPress: async () => {
           try {
+            // Firebase signout
             await auth().signOut();
-            await AsyncStorage.multiRemove(['userRole', 'lastActive']);
+            
+            // AsyncStorage cleanup (sab keys ek saath remove karein)
+            await AsyncStorage.clear();
+            
+            // Callback trigger
             if (onLogout) onLogout();
           } catch (error) {
-            Alert.alert("Error", "Logout failed.");
+            console.error("Logout Error:", error);
+            Alert.alert("Error", "Logout failed. Please try again.");
           }
         }
       }

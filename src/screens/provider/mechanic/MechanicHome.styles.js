@@ -15,8 +15,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 25,
-    paddingTop: 10,
-    paddingBottom: 20,
+    paddingTop: 15,
+    paddingBottom: 10,
     backgroundColor: '#FFFFFF',
   },
   welcomeText: {

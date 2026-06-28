@@ -30,8 +30,9 @@ export const styles = StyleSheet.create({
     height: 140,
   },
   profileImage: {
-    width: 140,
-    height: 140,
+    marginTop: 20,
+    width: 125,
+    height: 125,
     borderRadius: 70,
     borderWidth: 2,
     borderColor: '#002855', // Aapka original deep blue border color
@@ -41,8 +42,8 @@ export const styles = StyleSheet.create({
     bottom: 5,
     right: 5,
     backgroundColor: '#002855', // Original camera circle color
-    width: 36,
-    height: 36,
+    width: 35,
+    height: 35,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
@@ -57,7 +58,7 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
   userName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1E293B',
     marginTop: 12,

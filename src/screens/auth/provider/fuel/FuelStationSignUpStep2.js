@@ -12,9 +12,10 @@ import {
   ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { styles } from './FuelStationSignUpStep2.styles';
-import { registerUserInFirebase } from '../../../../services/authService';
+import { styles } from './FuelStationSignUpStep2.styles'; 
 import { launchImageLibrary } from 'react-native-image-picker';
+import auth from '@react-native-firebase/auth'; 
+import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress }) => {
@@ -24,7 +25,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
   const [licenseExpiry, setLicenseExpiry] = useState('');
   const [loading, setLoading] = useState(false);
   const [stationPic, setStationPic] = useState(null);
-  // Picker Logic Function
+
   const handleStationPicPick = async () => {
     const options = { mediaType: 'photo', quality: 0.8 };
     try {
@@ -43,8 +44,8 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
       console.log(error);
     }
   };
+
   const handleSignUp = async () => {
-    // Validation Checks
     if (!stationName || !stationAddress || !licenseNumber || !licenseExpiry) {
       Alert.alert("Error", "Please fill all required fields!");
       return;
@@ -57,43 +58,55 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
       Alert.alert("Error", "Basic registration details are missing. Please go back.");
       return;
     }
+
     setLoading(true);
 
-    const combinedAdditionalData = {
-      username: step1Data.username,
-      homeAddress: step1Data.homeAddress,
-      phone: step1Data.phone,
-      cnicFrontName: step1Data.cnicFront ? (step1Data.cnicFront.fileName || 'cnic_front.jpg') : 'None',
-      cnicBackName: step1Data.cnicBack ? (step1Data.cnicBack.fileName || 'cnic_back.jpg') : 'None',
-      stationName: stationName.trim(),
-      stationAddress: stationAddress.trim(),
-      licenseNumber: licenseNumber.trim(),
-      licenseExpiry: licenseExpiry.trim(),
-      stationPicName: stationPic.fileName || 'fuel_station.jpg',
-    };
-
     try {
-      const result = await registerUserInFirebase(
-        step1Data.email,
-        step1Data.password,
-        step1Data.name,
-        combinedAdditionalData,
-        'fuel_station'
+      // 1. Create User Account directly in Firebase Authentication
+      const userCredential = await auth().createUserWithEmailAndPassword(
+        step1Data.email.trim().toLowerCase(),
+        step1Data.password
       );
-      if (result.success) {
-        const currentTimestamp = Date.now().toString();
-        await AsyncStorage.setItem('userRole', 'fuel_station');
-        await AsyncStorage.setItem('lastActive', currentTimestamp);
-        setLoading(false);
-        if (onSignUpFinish) {
-          onSignUpFinish();
-        }
-      } else {
-        Alert.alert('Registration Failed', result.error);
-      }
+
+      const uid = userCredential.user.uid;
+
+      // 2. Save Direct in FuelStations Collection with status: 'pending'
+      await firestore().collection('FuelStations').doc(uid).set({
+        uid: uid,
+        name: step1Data.name || 'Unknown Fuel Provider',
+        email: step1Data.email.trim().toLowerCase(),
+        password: step1Data.password,
+        phone: step1Data.phone || 'N/A',
+        username: step1Data.username || '',
+        homeAddress: step1Data.homeAddress || '',
+        role: 'fuel_station',
+        status: 'pending',
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        cnicFrontUrl: step1Data.cnicFront?.uri || '',
+        cnicBackUrl: step1Data.cnicBack?.uri || '',
+        stationName: stationName.trim(),
+        stationAddress: stationAddress.trim(),
+        licenseNumber: licenseNumber.trim(),
+        licenseExpiry: licenseExpiry.trim(),
+        stationPicName: stationPic.uri || '', 
+      });
+
+      // 3. Force sign out right after registration
+      await auth().signOut();
+      await AsyncStorage.setItem('userRole', 'pendingReview'); 
+      await AsyncStorage.setItem('lastActive', Date.now().toString());
+
+      setLoading(false);
+      Alert.alert(
+        "Application Submitted",
+        "Your registration request has been sent to Admin for approval. You can log in once approved.",
+        [{ text: "OK", onPress: () => { if (onSignUpFinish) onSignUpFinish(); } }]
+      );
+
     } catch (error) {
       setLoading(false);
-      console.log("Fuel Station Step 2 Error Block:", error);
+      console.log("Fuel Station Step 2 Registration Crash Block:", error);
+      Alert.alert("Submission Failed", error.message);
     }
   };
 
@@ -106,7 +119,6 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
         <View style={styles.container}>
           <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
           
-          {/* Form Header */}
           <View style={styles.headerRow}>
              <TouchableOpacity onPress={onBack} disabled={loading}>
                 <Icon name="arrow-back" size={24} color="#333" />
@@ -115,7 +127,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
           </View>
           <Text style={styles.subText}>Step 2 of 2: Business Information</Text>
 
-          {/* 1. Fuel Station Name */}
+          {/* Fuel Station Name */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Fuel Station Name *</Text>
             <View style={styles.fieldWrapper}>
@@ -131,7 +143,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             </View>
           </View>
 
-          {/* 2. Fuel Station Address */}
+          {/* Fuel Station Address */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Fuel Station Address *</Text>
             <View style={styles.fieldWrapper}>
@@ -147,7 +159,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             </View>
           </View>
 
-          {/* 3. License Number */}
+          {/* License Number */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>License Number *</Text>
             <View style={styles.fieldWrapper}>
@@ -164,7 +176,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             </View>
           </View>
 
-          {/* 4. License Expiry */}
+          {/* License Expiry */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>License Expiry Date *</Text>
             <View style={styles.fieldWrapper}>
@@ -180,7 +192,7 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             </View>
           </View>
 
-          {/* 5. Fuel Station Main Image Upload */}
+          {/* Fuel Station Image Upload */}
           <Text style={styles.inputLabel}>Fuel Station Picture *</Text>
           <TouchableOpacity 
             style={[styles.uploadBox, stationPic && { borderColor: '#10B981', borderWidth: 1.5 }]} 

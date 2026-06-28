@@ -8,19 +8,19 @@ export const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1E293B',
   },
   tabContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    marginTop: 15,
+    marginTop: 10,
     marginBottom: 10,
   },
   tabButton: {
