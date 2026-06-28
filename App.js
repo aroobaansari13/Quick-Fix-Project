@@ -4,7 +4,8 @@ import SplashScreen from './src/screens/splash/SplashScreen';
 import UserSelection from './src/screens/auth/UserSelection';
 import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
 import CustomerHome from './src/screens/customer/CustomerHome';
-import ManageProfile from './src/screens/customer/ManageProfile'; // 🌟 Screen import pehle se theek thi
+import ManageProfile from './src/screens/customer/ManageProfile'; 
+import TermsAndPolicies from './src/screens/customer/TermsAndPolicies'; // 🌟 Nayi screen import ki
 import SignIn from './src/screens/SignIn';
 import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
 import MechanicSignUpContainer from './src/screens/auth/provider/mechanic/MechanicSignUpContainer';
@@ -154,17 +155,29 @@ const App = () => {
           onEditProfilePress={(newImage) => {
             setProfileImage(newImage); 
           }}
-          // 🟢 1. Yahan prop pass kiya taake Profile click hone par state badle
           onManageProfilePress={() => setCurrentScreen('manageProfile')} 
+          // 🟢 1. 'CustomerHome' ko postman banane ke liye prop pass kiya
+          onTermsAndPoliciesPress={() => setCurrentScreen('termsAndPolicies')} 
         />
       )}
 
-      {/* 🟢 2. ManageProfile Screen ka navigation route jo pehle missing tha */}
       {currentScreen === 'manageProfile' && (
         <ManageProfile 
           navigation={{
             goBack: () => {
-              setCustomerActiveTab('profile'); // Back aane par default Profile Tab hi active rahe
+              setCustomerActiveTab('profile'); 
+              setCurrentScreen('customerHome');
+            }
+          }} 
+        />
+      )}
+
+      {/* 🟢 2. TermsAndPolicies Screen ka navigation route */}
+      {currentScreen === 'termsAndPolicies' && (
+        <TermsAndPolicies 
+          navigation={{
+            goBack: () => {
+              setCustomerActiveTab('profile'); // Back jane par default profile tab hi open rahega
               setCurrentScreen('customerHome');
             }
           }} 

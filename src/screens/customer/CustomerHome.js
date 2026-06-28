@@ -9,8 +9,8 @@ import CustomerProfile from './CustomerProfile';
 import { checkAndEnableLocation } from '../../services/locationService';
 import Geolocation from 'react-native-geolocation-service';
 
-// 🟢 App.js se pass kiya hua 'onManageProfilePress' yahan props mein receive kar liya hai
-const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, onManageProfilePress }) => {
+// 🟢 Step 1: App.js se bheja hua 'onTermsAndPoliciesPress' yahan props mein receive kiya
+const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, onManageProfilePress, onTermsAndPoliciesPress }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
   // State ko dynamic banaya taake image update hone par active tab change na ho
@@ -117,11 +117,12 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, 
       ) : activeTab === 'orders' ? (
         <CustomerOrders />
       ) : (
-        /* 🟢 CustomerProfile ko ab 'onManageProfilePress' bhej diya hai jo chain reaction complete karega */
+        /* 🟢 Step 2: CustomerProfile ko 'onTermsAndPoliciesPress' ka prop aage pass kar diya taake link complete ho ske */
         <CustomerProfile 
           onLogout={onLogout} 
           profileImage={profileImage}
           onManageProfilePress={onManageProfilePress}
+          onTermsAndPoliciesPress={onTermsAndPoliciesPress} 
           onImageUpdate={(newImage) => {
             if (onEditProfilePress) {
               onEditProfilePress(newImage); 

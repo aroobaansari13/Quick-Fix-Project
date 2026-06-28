@@ -7,19 +7,15 @@ import auth from '@react-native-firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
-// 🌟 App.js ke state flow ke sath sync karne ke liye onManageProfilePress prop add kiya
-const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImageUpdate }) => {
+const CustomerProfile = ({ onManageProfilePress, onTermsAndPoliciesPress, onLogout, profileImage, onImageUpdate }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  // Temporary selected image ko hold karne ke liye state
   const [tempImage, setTempImage] = useState(null);
 
-  // Bottom Sheet open karte waqt tempImage ko clear karenge
   const openBottomSheet = () => {
     setTempImage(null);
     setModalVisible(true);
   };
 
-  // 1. Camera click handler
   const openCamera = () => {
     const options = {
       mediaType: 'photo',
@@ -32,13 +28,11 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
     launchCamera(options, (response) => {
       if (response.didCancel) return;
       if (response.assets && response.assets.length > 0) {
-        // Direct update nahi hoga, pehle temporary state mein save hoga
         setTempImage(response.assets[0].uri);
       }
     });
   };
 
-  // 2. Gallery picker handler
   const openGallery = () => {
     const options = {
       mediaType: 'photo',
@@ -51,13 +45,11 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
     launchImageLibrary(options, (response) => {
       if (response.didCancel) return;
       if (response.assets && response.assets.length > 0) {
-        // Direct update nahi hoga, pehle temporary state mein save hoga
         setTempImage(response.assets[0].uri);
       }
     });
   };
 
-  // 3. Final Done/Save Button click karne par photo update hogi
   const handleDoneUpdate = () => {
     if (tempImage) {
       if (onImageUpdate) onImageUpdate(tempImage);
@@ -67,7 +59,6 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
     }
   };
 
-  // 4. Profile photo delete/remove karne ka function
   const removePhoto = () => {
     setModalVisible(false);
     Alert.alert(
@@ -80,7 +71,7 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
           style: "destructive",
           onPress: () => {
             if (onImageUpdate) {
-              onImageUpdate('https://via.placeholder.com/150'); // Default placeholder wapas aa jayega
+              onImageUpdate('https://via.placeholder.com/150'); 
             }
           }
         }
@@ -88,8 +79,6 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
     );
   };
 
-  // Logout Function
-  // Logout Function
   const handleLogout = async () => {
     Alert.alert("Logout", "Do you want to logout?", [
       { text: "Cancel", style: "cancel" },
@@ -98,13 +87,8 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
         style: "destructive",
         onPress: async () => {
           try {
-            // Firebase signout
             await auth().signOut();
-            
-            // AsyncStorage cleanup (sab keys ek saath remove karein)
             await AsyncStorage.clear();
-            
-            // Callback trigger
             if (onLogout) onLogout();
           } catch (error) {
             console.error("Logout Error:", error);
@@ -130,7 +114,6 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
       
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Card Header Section */}
         <View style={styles.header}>
           <View style={styles.profileImageContainer}>
             <TouchableOpacity 
@@ -153,22 +136,23 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
           </View>
         </View>
 
-        {/* Profile Menu Items */}
         <View style={styles.menuSection}>
-          {/* 🌟 Yahan click karne par ab App.js ka pass kiya hua callback execute hoga */}
           <MenuItem 
             icon="person-outline" 
             title="Manage Profile" 
             onPress={onManageProfilePress} 
           />
           <MenuItem icon="settings-outline" title="Account Settings" onPress={() => {}} />
-          <MenuItem icon="document-text-outline" title="Terms & Policies" onPress={() => {}} />
+          <MenuItem 
+            icon="document-text-outline" 
+            title="Terms & Policies" 
+            onPress={onTermsAndPoliciesPress} 
+          />
           <View style={styles.separator} />
           <MenuItem icon="log-out-outline" title="Logout" color="#FF4D4D" onPress={handleLogout} />
         </View>
       </ScrollView>
 
-      {/* 🟢 WHATSAPP STYLE BOTTOM SHEET MODAL WITH GREEN TICK DONE OPTION */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -176,11 +160,9 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.sheetOverlay}>
-          {/* Sheet ke baahar touch karne par dismiss ho jayegi */}
           <TouchableOpacity style={styles.sheetDismissArea} activeOpacity={1} onPress={() => setModalVisible(false)} />
           
           <View style={styles.sheetContainer}>
-            {/* Top drag line */}
             <View style={styles.sheetHandleBAR} />
             
             <View style={styles.sheetHeaderRow}>
@@ -191,9 +173,7 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
                 <Text style={styles.sheetTitleText}>Profile picture</Text>
               </View>
 
-              {/* Action Icons: Done (Green Tick) aur Trash Bin */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                {/* Jab image select ho jayegi, tabhi yeh beautiful Green Tick button dikhega */}
                 {tempImage && (
                   <TouchableOpacity style={styles.doneBtnBlock} onPress={handleDoneUpdate}>
                     <Icon name="checkmark-circle" size={26} color="#10B981" /> 
@@ -206,7 +186,6 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
               </View>
             </View>
 
-            {/* Selected Image ka chota preview text ke sath */}
             {tempImage && (
               <View style={styles.previewImageWrapper}>
                 <Image source={{ uri: tempImage }} style={styles.previewImageStyle} />
@@ -214,9 +193,7 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
               </View>
             )}
 
-            {/* Camera aur Gallery options */}
             <View style={styles.optionsFlexRow}>
-              {/* Camera Icon block */}
               <TouchableOpacity style={styles.optionClickBlock} onPress={openCamera}>
                 <View style={[styles.iconCircleWrapper, { backgroundColor: '#E8F5E9' }]}>
                   <Icon name="camera" size={26} color="#2E7D32" />
@@ -224,7 +201,6 @@ const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImage
                 <Text style={styles.optionLabelText}>Camera</Text>
               </TouchableOpacity>
 
-              {/* Gallery Icon block */}
               <TouchableOpacity style={styles.optionClickBlock} onPress={openGallery}>
                 <View style={[styles.iconCircleWrapper, { backgroundColor: '#E3F2FD' }]}>
                   <Icon name="image" size={26} color="#1565C0" />
