@@ -7,7 +7,8 @@ import auth from '@react-native-firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
-const CustomerProfile = ({ onLogout, profileImage, onImageUpdate }) => {
+// 🌟 App.js ke state flow ke sath sync karne ke liye onManageProfilePress prop add kiya
+const CustomerProfile = ({ onManageProfilePress, onLogout, profileImage, onImageUpdate }) => {
   const [modalVisible, setModalVisible] = useState(false);
   // Temporary selected image ko hold karne ke liye state
   const [tempImage, setTempImage] = useState(null);
@@ -147,7 +148,12 @@ const CustomerProfile = ({ onLogout, profileImage, onImageUpdate }) => {
 
         {/* Profile Menu Items */}
         <View style={styles.menuSection}>
-          <MenuItem icon="person-outline" title="Manage Profile" onPress={() => {}} />
+          {/* 🌟 Yahan click karne par ab App.js ka pass kiya hua callback execute hoga */}
+          <MenuItem 
+            icon="person-outline" 
+            title="Manage Profile" 
+            onPress={onManageProfilePress} 
+          />
           <MenuItem icon="settings-outline" title="Account Settings" onPress={() => {}} />
           <MenuItem icon="document-text-outline" title="Terms & Policies" onPress={() => {}} />
           <View style={styles.separator} />

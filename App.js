@@ -4,6 +4,7 @@ import SplashScreen from './src/screens/splash/SplashScreen';
 import UserSelection from './src/screens/auth/UserSelection';
 import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
 import CustomerHome from './src/screens/customer/CustomerHome';
+import ManageProfile from './src/screens/customer/ManageProfile'; // 🌟 Nayi screen import ki
 import SignIn from './src/screens/SignIn';
 import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
 import MechanicSignUpContainer from './src/screens/auth/provider/mechanic/MechanicSignUpContainer';
@@ -28,11 +29,11 @@ const App = () => {
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
 
   useEffect(() => {
-  const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
-    if (!isShowSplash) {
-      try {
-        const userRole = await AsyncStorage.getItem('userRole');
-        const lastActiveStr = await AsyncStorage.getItem('lastActive');
+    const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
+      if (!isShowSplash) {
+        try {
+          const userRole = await AsyncStorage.getItem('userRole');
+          const lastActiveStr = await AsyncStorage.getItem('lastActive');
 
           if (currentUser && userRole && lastActiveStr) {
             const lastActive = parseInt(lastActiveStr, 10);
@@ -56,11 +57,12 @@ const App = () => {
               else setCurrentScreen('selection');
             }
           } else {
+            const currentTime = Date.now();
             await AsyncStorage.setItem('lastActive', currentTime.toString());
             
             if (userRole === 'customer') setCurrentScreen('customerHome');
-              else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
-              else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
+            else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
+            else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
             else setCurrentScreen('selection');
           }
         } catch (error) {
@@ -143,10 +145,9 @@ const App = () => {
         <MechanicSignUpContainer 
           onBackToSelection={() => setCurrentScreen('providerSelection')} 
           onSignInPress={() => setCurrentScreen('signIn')}
-          // 👇 Is callback ko parameter accept karne ke liye update kiya
           onSignUpSuccess={(targetScreen) => {
             if (targetScreen === 'pendingReview') {
-               setCurrentScreen('pendingReview'); // 🔄 Ab yeh direct pending screen par jayega!
+               setCurrentScreen('pendingReview');
             } else {
                 setCurrentScreen('mechanicHome');
               }
@@ -179,23 +180,40 @@ const App = () => {
 
       {currentScreen === 'adminDashboard' && (
         <AdminDashboard 
-        onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
+          onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
         />
       )}
       {currentScreen === 'pendingAppsList' && (
         <AdminPendingApplications 
-        onBack={() => setCurrentScreen('adminDashboard')} 
+          onBack={() => setCurrentScreen('adminDashboard')} 
         />
       )}
 
-      {/* 🟢 Updated Block: Isme purani extra screen skip ho gayi hai aur direct image selection synchronization apply kar di hai */}
+      {/* 🟢 Customer Home (Isme tab profile tracker callback add kiya hai navigation ke liye) */}
       {currentScreen === 'customerHome' && (
         <CustomerHome 
           onLogout={() => setCurrentScreen('signIn')} 
           initialTab={customerActiveTab} 
           profileImage={profileImage}
           onEditProfilePress={(newImage) => {
-            setProfileImage(newImage); // Photo set hote hi global value refresh hogi, redirect nahi hoga
+            setProfileImage(newImage);
+          }}
+          // 🌟 Jab user Manage Profile click kare, tab direct custom state transition ho
+          onManageProfilePress={() => {
+            setCurrentScreen('manageProfile');
+          }}
+        />
+      )}
+
+      {/* 🟢 7. Nayi Manage Profile Screen Render Execution Block */}
+      {currentScreen === 'manageProfile' && (
+        <ManageProfile 
+          // Custom structural navigation handle karne ke liye parameters mock karein
+          navigation={{
+            goBack: () => {
+              setCustomerActiveTab('profile'); // Back aate hi bottom tabs mein Profile tab open dikhe
+              setCurrentScreen('customerHome');
+            }
           }}
         />
       )}
