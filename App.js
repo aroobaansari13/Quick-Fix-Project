@@ -4,7 +4,7 @@ import SplashScreen from './src/screens/splash/SplashScreen';
 import UserSelection from './src/screens/auth/UserSelection';
 import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
 import CustomerHome from './src/screens/customer/CustomerHome';
-import ManageProfile from './src/screens/customer/ManageProfile'; // 🌟 Nayi screen import ki
+import ManageProfile from './src/screens/customer/ManageProfile'; // 🌟 Screen import pehle se theek thi
 import SignIn from './src/screens/SignIn';
 import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
 import MechanicSignUpContainer from './src/screens/auth/provider/mechanic/MechanicSignUpContainer';
@@ -26,55 +26,10 @@ const App = () => {
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
 
   useEffect(() => {
-<<<<<<< HEAD
-    const unsubscribe = auth().onAuthStateChanged(async (currentUser) => {
-      if (!isShowSplash) {
-        try {
-          const userRole = await AsyncStorage.getItem('userRole');
-          const lastActiveStr = await AsyncStorage.getItem('lastActive');
-
-          if (currentUser && userRole && lastActiveStr) {
-            const lastActive = parseInt(lastActiveStr, 10);
-            const currentTime = Date.now();
-            const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
-
-            if (currentTime - lastActive > ONE_MONTH_MS) {
-              await auth().signOut();
-              await AsyncStorage.multiRemove(['userRole', 'lastActive']);
-              setCurrentScreen('signIn');
-            } else {
-              await AsyncStorage.setItem('lastActive', currentTime.toString());
-              
-              if (userRole === 'customer') {
-                setCustomerActiveTab('home'); // Login par default map (home) khule
-                setCurrentScreen('customerHome');
-              }
-              else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
-              else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
-              else if (userRole === 'admin') setCurrentScreen('adminDashboard');
-              else setCurrentScreen('selection');
-            }
-          } else {
-            const currentTime = Date.now();
-            await AsyncStorage.setItem('lastActive', currentTime.toString());
-            
-            if (userRole === 'customer') setCurrentScreen('customerHome');
-            else if (userRole === 'mechanic') setCurrentScreen('mechanicHome');
-            else if (userRole === 'fuel' || userRole === 'fuel_station') setCurrentScreen('fuelStationHome');
-            else setCurrentScreen('selection');
-          }
-        } catch (error) {
-          console.log("Session Error:", error);
-          setCurrentScreen('selection');
-        } finally {
-          setIsSessionChecking(false);
-        }
-=======
     const unsubscribe = auth().onAuthStateChanged((user) => {
       if (isShowSplash) return;
       if (!user) {
         setCurrentScreen('selection');
->>>>>>> 2bcb4fd8c332bb79a5d3418194bb4cfcccbbb925
       }
       setIsSessionChecking(false);
     });
@@ -119,8 +74,6 @@ const App = () => {
           onAdminLoginSuccess={() => setCurrentScreen('adminDashboard')}
           onBack={() => setCurrentScreen('selection')} 
           onSignInSuccess={(screenName) => {
-          // AuthManager jo string return karega (e.g., 'mechanicHome'), 
-          // ye seedha yahan mil jayega aur screen update ho jayegi
           setCurrentScreen(screenName);
           }}
         />
@@ -193,39 +146,28 @@ const App = () => {
         />
       )}
 
-<<<<<<< HEAD
-      {/* 🟢 Customer Home (Isme tab profile tracker callback add kiya hai navigation ke liye) */}
-=======
->>>>>>> 2bcb4fd8c332bb79a5d3418194bb4cfcccbbb925
       {currentScreen === 'customerHome' && (
         <CustomerHome 
           onLogout={() => setCurrentScreen('signIn')} 
           initialTab={customerActiveTab} 
           profileImage={profileImage}
           onEditProfilePress={(newImage) => {
-<<<<<<< HEAD
-            setProfileImage(newImage);
+            setProfileImage(newImage); 
           }}
-          // 🌟 Jab user Manage Profile click kare, tab direct custom state transition ho
-          onManageProfilePress={() => {
-            setCurrentScreen('manageProfile');
-          }}
+          // 🟢 1. Yahan prop pass kiya taake Profile click hone par state badle
+          onManageProfilePress={() => setCurrentScreen('manageProfile')} 
         />
       )}
 
-      {/* 🟢 7. Nayi Manage Profile Screen Render Execution Block */}
+      {/* 🟢 2. ManageProfile Screen ka navigation route jo pehle missing tha */}
       {currentScreen === 'manageProfile' && (
         <ManageProfile 
-          // Custom structural navigation handle karne ke liye parameters mock karein
           navigation={{
             goBack: () => {
-              setCustomerActiveTab('profile'); // Back aate hi bottom tabs mein Profile tab open dikhe
+              setCustomerActiveTab('profile'); // Back aane par default Profile Tab hi active rahe
               setCurrentScreen('customerHome');
             }
-=======
-            setProfileImage(newImage); 
->>>>>>> 2bcb4fd8c332bb79a5d3418194bb4cfcccbbb925
-          }}
+          }} 
         />
       )}
     </View>

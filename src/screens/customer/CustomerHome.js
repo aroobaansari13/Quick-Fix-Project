@@ -9,11 +9,11 @@ import CustomerProfile from './CustomerProfile';
 import { checkAndEnableLocation } from '../../services/locationService';
 import Geolocation from 'react-native-geolocation-service';
 
-// 🟢 1. Props mein 'onEditProfilePress', 'initialTab', aur 'profileImage' receive kar liya hai
-const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage }) => {
+// 🟢 App.js se pass kiya hua 'onManageProfilePress' yahan props mein receive kar liya hai
+const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, onManageProfilePress }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
-  // 🟢 2. State ko dynamic banaya taake image update hone par active tab change na ho
+  // State ko dynamic banaya taake image update hone par active tab change na ho
   const [activeTab, setActiveTab] = useState(initialTab || 'home');
   
   const [locationActive, setLocationActive] = useState(false);
@@ -21,7 +21,7 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage }
   const [coordinates, setCoordinates] = useState({ lat: 32.1877, lng: 74.1945 });
   const [debugMsg, setDebugMsg] = useState('Starting...');
 
-  // 2. Screen khultay hi location check karne ka function (100% Unchanged)
+  // Screen khultay hi location check karne ka function (100% Unchanged)
   useEffect(() => {
     setDebugMsg("Step 1: useEffect fired");
 
@@ -43,7 +43,7 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage }
     }, 1000);
   }, []);
 
-  // 3. Jab tak check ho raha ho, tab tak full screen loading screen dikhayein (100% Unchanged)
+  // Jab tak check ho raha ho, tab tak full screen loading screen dikhayein (100% Unchanged)
   if (checkingLocation) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
@@ -117,10 +117,11 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage }
       ) : activeTab === 'orders' ? (
         <CustomerOrders />
       ) : (
-        /* 🟢 3. Yahan CustomerProfile ko naye sync props pass kar diye hain taake direct image trigger chal sake aur map reload na ho */
+        /* 🟢 CustomerProfile ko ab 'onManageProfilePress' bhej diya hai jo chain reaction complete karega */
         <CustomerProfile 
           onLogout={onLogout} 
           profileImage={profileImage}
+          onManageProfilePress={onManageProfilePress}
           onImageUpdate={(newImage) => {
             if (onEditProfilePress) {
               onEditProfilePress(newImage); 
@@ -164,4 +165,5 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage }
     </View>
   );
 };
+
 export default CustomerHome;
