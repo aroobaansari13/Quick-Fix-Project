@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore'; 
 import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -74,9 +75,18 @@ const App = () => {
         <SignIn 
           onAdminLoginSuccess={() => setCurrentScreen('adminDashboard')}
           onBack={() => setCurrentScreen('selection')} 
-          onSignInSuccess={(screenName) => {
-          setCurrentScreen(screenName);
+          onSignInSuccess={(screenName) => setCurrentScreen(screenName)}
+          navigation={{
+            navigate: (screen) => setCurrentScreen(screen)
           }}
+        />
+      )}
+
+      {currentScreen === 'forgotPasswordScreen' && (
+        <ForgotPasswordScreen 
+          navigation={{
+            goBack: () => setCurrentScreen('signIn')
+          }} 
         />
       )}
 

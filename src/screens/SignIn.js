@@ -8,12 +8,14 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthManager } from '../services/AuthManager';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
-const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack }) => {
+const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack, navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
 
   const handleLoginSuccess = async (userRole) => {
     try {
@@ -106,7 +108,7 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.forgotPasswordContainer} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.forgotPasswordContainer} activeOpacity={0.7} onPress={() => setModalVisible(true)}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -118,8 +120,16 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack })
           >
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.signInButtonText}>Sign In</Text>}
           </TouchableOpacity>
+          <ForgotPasswordModal 
+            isVisible={isModalVisible} 
+            onClose={() => setModalVisible(false)}
+            onSelectEmail={() => {
+            setModalVisible(false);
+             // Yahan navigate ki jagah direct screen ka naam bhejein
+             navigation.navigate('forgotPasswordScreen'); 
+            }}
+          />
         </View>
-
         <View style={styles.footerSection}>
           <Text style={styles.footerText}>Don't have an account? </Text>
           <TouchableOpacity activeOpacity={0.7} onPress={onSignUpPress}>
