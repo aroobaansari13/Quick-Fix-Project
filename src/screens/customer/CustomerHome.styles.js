@@ -16,16 +16,13 @@ export const styles = StyleSheet.create({
     bottom: 0,
   },
   searchContainer: {
-    position: 'absolute',
-    top: 50, 
-    left: 20,
-    right: 20,
     backgroundColor: '#FFFFFF',
     borderRadius: 28, 
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20, 
+    paddingHorizontal: 25, 
     height: 55,
+    marginHorizontal: 15,
     elevation: 5, 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 },
@@ -51,7 +48,7 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#FFFFFF',
-    height: 70,
+    height: 80,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -81,5 +78,32 @@ export const styles = StyleSheet.create({
   marginTop: 4,
   color: COLORS.primary, 
   fontWeight: '600',
+},
+uiOverlay: { 
+  position: 'absolute', 
+  top: 50, 
+  left: 20, 
+  right: 20, 
+  zIndex: 10 
+},
+resultsDropdown: {
+  backgroundColor: '#FFFFFF',
+  marginTop: 10,
+  marginHorizontal: 20, // Search bar ke sath perfect align karne ke liye
+  borderRadius: 20,     // Thoda zyada round corners
+  padding: 5,
+  elevation: 8,         // Thoda gehra shadow taake card "pop" kare
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+  maxHeight: 300,
+},
+
+resultItem: {
+  paddingVertical: 15,
+  paddingHorizontal: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: '#F5F5F5', // Light divider
 },
 });

@@ -210,26 +210,26 @@ const AdminPendingApplications = ({ onBack }) => {
             <Text style={styles.sectionTitle}><Icon name="business-outline" size={18} /> Step 2: Business Details</Text>
             <Text style={styles.infoText}>
               <Text style={styles.boldLabel}>Business Name:</Text>{' '}
-              {selectedApp.shopDetails?.shopName || selectedApp.stationName || 'N/A'}
+              {selectedApp.shopDetails?.shopName || selectedApp.stationDetails?.stationName ||'N/A'}
             </Text>
             <Text style={styles.infoText}>
               <Text style={styles.boldLabel}>Business Address:</Text>{' '}
-              {selectedApp.shopDetails?.address || selectedApp.stationAddress || 'N/A'}
+              {selectedApp.shopDetails?.address || selectedApp.stationDetails?.address || 'N/A'}
             </Text>
             {selectedApp.collectionName === 'Mechanics' ? (
               <Text style={styles.infoText}><Text style={styles.boldLabel}>Specializations:</Text> {selectedApp.shopDetails?.specializations || 'N/A'}</Text>
             ) : (
               <>
-                <Text style={styles.infoText}><Text style={styles.boldLabel}>License Number:</Text> {selectedApp.licenseNumber || 'N/A'}</Text>
-                <Text style={styles.infoText}><Text style={styles.boldLabel}>License Expiry:</Text> {selectedApp.licenseExpiry || 'N/A'}</Text>
+                <Text style={styles.infoText}><Text style={styles.boldLabel}>License Number:</Text> {selectedApp.stationDetails?.licenseNumber || 'N/A'}</Text>
+                <Text style={styles.infoText}><Text style={styles.boldLabel}>License Expiry:</Text> {selectedApp.stationDetails?.licenseExpiry || 'N/A'}</Text>
               </>
             )}
             
             {/* Business Picture */}
             <Text style={[styles.boldLabel, { marginTop: 15, marginBottom: 4 }]}>Business Photo (Tap to Zoom):</Text>
-            <TouchableOpacity onPress={() => openImageFull(selectedApp.profilePicture || selectedApp.stationPicName)}>
+            <TouchableOpacity onPress={() => openImageFull(selectedApp.profilePicture || selectedApp.stationDetails?.stationPicName)}>
               <Image 
-                source={{ uri: selectedApp.profilePicture || selectedApp.stationPicName || 'https://via.placeholder.com/300x150?text=No+Photo' }} 
+                source={{ uri: selectedApp.profilePicture || selectedApp.stationDetails?.stationPicName || 'https://via.placeholder.com/300x150?text=No+Photo' }} 
                 style={styles.largeDocumentImage} 
                 resizeMode="cover"
               />

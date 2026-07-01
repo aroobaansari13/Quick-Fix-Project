@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -13,6 +13,8 @@ import {
 import { styles } from './FuelStationSignUpStep1.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
+import Geolocation from 'react-native-geolocation-service';
+import { checkAndEnableLocation } from '../../../../services/locationService';
 
 const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
   // Fuel Station basic details 
@@ -24,6 +26,29 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
   const [password, setPassword] = useState('');
   const [cnicFront, setCnicFront] = useState(null);
   const [cnicBack, setCnicBack] = useState(null);
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+
+  useEffect(() => {
+  Geolocation.getCurrentPosition(
+    (position) => {
+      console.log("Latitude:", position.coords.latitude);
+      console.log("Longitude:", position.coords.longitude);
+
+      setLatitude(position.coords.latitude);
+      setLongitude(position.coords.longitude);
+    },
+    (error) => {
+      console.log("Location Error:", error);
+      Alert.alert("Location Error", error.message);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 10000,
+    }
+  );
+ }, []);
 
   // Picker Logic 
   const handleCnicPick = async (side) => {
@@ -84,6 +109,8 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
       password: password,
       cnicFront: cnicFront,
       cnicBack: cnicBack,
+      latitude,
+      longitude,
     };
 
     if (onNext) {

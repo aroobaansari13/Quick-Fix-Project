@@ -1,49 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StatusBar, Alert, ActivityIndicator} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StatusBar, Alert, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { styles } from './CustomerHome.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../config/theme';
 import CustomerOrders from './CustomerOrders';
-import CustomerProfile from './CustomerProfile'; 
-import { checkAndEnableLocation } from '../../services/locationService';
+import CustomerProfile from './CustomerProfile';
 import Geolocation from 'react-native-geolocation-service';
+import { searchNearbyServices } from '../../services/ProviderSearchService';
 
-// 🟢 Step 1: App.js se bheja hua 'onTermsAndPoliciesPress' yahan props mein receive kiya
-const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, onManageProfilePress, onTermsAndPoliciesPress }) => {
+const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, onManageProfilePress, onTermsAndPoliciesPress, onServiceSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // State ko dynamic banaya taake image update hone par active tab change na ho
+  const [searchResults, setSearchResults] = useState([]);
+  const [loadingSearch, setLoadingSearch] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab || 'home');
-  
-  const [locationActive, setLocationActive] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(true);
   const [coordinates, setCoordinates] = useState({ lat: 32.1877, lng: 74.1945 });
-  const [debugMsg, setDebugMsg] = useState('Starting...');
 
-  // Screen khultay hi location check karne ka function (100% Unchanged)
   useEffect(() => {
-    setDebugMsg("Step 1: useEffect fired");
-
-    setTimeout(() => {
-      setDebugMsg("Step 2: Requesting location...");
-
-      Geolocation.getCurrentPosition(
-        (position) => {
-          setDebugMsg("✅ Lat: " + position.coords.latitude + " Lng: " + position.coords.longitude);
-          setCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude });
-          setCheckingLocation(false);
-        },
-        (error) => {
-          setDebugMsg("Code:" + error.code + " | " + error.message);
-          setCheckingLocation(false);
-        },
-        { enableHighAccuracy: false, timeout: 30000, maximumAge: 0 }
-      );
-    }, 1000);
+    Geolocation.getCurrentPosition(
+      (position) => {
+        setCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setCheckingLocation(false);
+      },
+      (error) => {
+        setCheckingLocation(false);
+      },
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 0 }
+    );
   }, []);
 
-  // Jab tak check ho raha ho, tab tak full screen loading screen dikhayein (100% Unchanged)
   if (checkingLocation) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
@@ -53,7 +39,6 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, 
     );
   }
 
-  // OpenStreetMap ki HTML Script (100% Unchanged)
   const mapHtmlScript = `
     <!DOCTYPE html>
     <html>
@@ -62,28 +47,35 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, 
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-      <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100vw; }
-        .leaflet-top.leaflet-left { top: 110px; }
-      </style>
+      <style>body { margin: 0; padding: 0; } #map { height: 100vh; width: 100vw; } .leaflet-top.leaflet-left { top: 110px; }</style>
     </head>
     <body>
       <div id="map"></div>
       <script>
         var map = L.map('map').setView([${coordinates.lat}, ${coordinates.lng}], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        L.marker([${coordinates.lat}, ${coordinates.lng}]).addTo(map)
-          .bindPopup('You are here')
-          .openPopup();
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.marker([${coordinates.lat}, ${coordinates.lng}]).addTo(map).bindPopup('You are here').openPopup();
       </script>
     </body>
     </html>
   `;
+
+  const handleSearch = async (text) => {
+    setSearchQuery(text);
+    if (text.length > 2) {
+      setLoadingSearch(true);
+      try {
+        const results = await searchNearbyServices(text, coordinates.lat, coordinates.lng);
+        setSearchResults(results);
+      } catch (e) {
+        Alert.alert("Error", e.message);
+      } finally {
+        setLoadingSearch(false);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -91,76 +83,79 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, 
 
       {activeTab === 'home' ? (
         <>
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-            <WebView
-              source={{ html: mapHtmlScript }}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              startInLoadingState={true} 
-              scalesPageToFit={true}
-              style={{ flex: 1, width: '100%', height: '100%' }}
-            />
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
+            <WebView source={{ html: mapHtmlScript }} style={{ flex: 1 }} />
           </View>
 
-          {/* Floating Top Search Bar */}
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>⚲</Text> 
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search for services "
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+          <View style={{ position: 'absolute', top: 50, left: 0, right: 0, zIndex: 1 }}>
+            <View style={styles.searchContainer}>
+              <Text style={styles.searchIcon}>⚲</Text>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search for services..."
+                placeholderTextColor="#999"
+                value={searchQuery}
+                onChangeText={handleSearch}
+                onSubmitEditing={() => handleSearch(searchQuery)}
+                returnKeyType="search"
+              />
+            </View>
+
+            {loadingSearch && (
+              <View style={{ backgroundColor: 'white', marginHorizontal: 20, marginTop: 5, padding: 15, borderRadius: 10, elevation: 5 }}>
+                <ActivityIndicator color={COLORS.primary} size="small" />
+              </View>
+            )}
+
+            {!loadingSearch && searchResults.length > 0 && (
+              <View style={styles.resultsDropdown}>
+                {searchResults.map((item, index) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={styles.resultItem}
+                    activeOpacity={0.6}
+                    onPress={() => {
+                      // Fix: Search list close karke navigate karna
+                      setSearchResults([]);
+                      setSearchQuery('');
+                      if (onServiceSelect) {
+                        onServiceSelect(item);
+                      }
+                    }}
+                  >
+                    <Text style={{ fontWeight: 'bold' }}>{item.businessName}</Text>
+                    <Text>Distance - {item.distance} Km</Text>
+                    <Text style={{ color: COLORS.primary }}>{item.title} - PKR {item.price}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         </>
       ) : activeTab === 'orders' ? (
         <CustomerOrders />
       ) : (
-        /* 🟢 Step 2: CustomerProfile ko 'onTermsAndPoliciesPress' ka prop aage pass kar diya taake link complete ho ske */
         <CustomerProfile 
           onLogout={onLogout} 
           profileImage={profileImage}
           onManageProfilePress={onManageProfilePress}
           onTermsAndPoliciesPress={onTermsAndPoliciesPress} 
-          onImageUpdate={(newImage) => {
-            if (onEditProfilePress) {
-              onEditProfilePress(newImage); 
-            }
-          }}
+          onImageUpdate={(newImage) => { if (onEditProfilePress) onEditProfilePress(newImage); }}
         />
       )}
 
-      {/* Bottom Navigation (Hamesha visible rahegi - 100% Unchanged) */}
-      <View style={styles.bottomNav}>
-        {/* Home Option */}
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={() => setActiveTab('home')}>
-          <Icon 
-            name={activeTab === 'home' ? "home" : "home-outline"} 
-            size={24} 
-            color={activeTab === 'home' ? COLORS.primary : "#666666"} 
-          />
+      <View style={[styles.bottomNav, { zIndex: 2 }]}>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('home')}>
+          <Icon name={activeTab === 'home' ? "home" : "home-outline"} size={24} color={activeTab === 'home' ? COLORS.primary : "#666666"} />
           <Text style={activeTab === 'home' ? styles.activeNavText : styles.navText}>Home</Text>
         </TouchableOpacity>
-
-        {/* Orders Option */}
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={() => setActiveTab('orders')}>
-          <Icon 
-            name={activeTab === 'orders' ? "clipboard" : "clipboard-outline"} 
-            size={24} 
-            color={activeTab === 'orders' ? COLORS.primary : "#666666"} 
-          />
-          <Text style={activeTab === 'orders' ? styles.activeNavText : styles.navText}>Orders</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('orders')}>
+          <Icon name={activeTab === 'orders' ? "clipboard" : "clipboard-outline"} size={24} color={activeTab === 'orders' ? COLORS.primary : "#666666"} />
+          <Text style={activeTab === 'home' ? styles.activeNavText : styles.navText}>Orders</Text>
         </TouchableOpacity>
-
-        {/* Profile Option */}
-        <TouchableOpacity style={styles.navItem} activeOpacity={0.7} onPress={() => setActiveTab('profile')}>
-          <Icon 
-            name={activeTab === 'profile' ? "person" : "person-outline"} 
-            size={24} 
-            color={activeTab === 'profile' ? COLORS.primary : "#666666"} 
-          />
-          <Text style={activeTab === 'profile' ? styles.activeNavText : styles.navText}>Profile</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('profile')}>
+          <Icon name={activeTab === 'profile' ? "person" : "person-outline"} size={24} color={activeTab === 'profile' ? COLORS.primary : "#666666"} />
+          <Text style={activeTab === 'home' ? styles.activeNavText : styles.navText}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

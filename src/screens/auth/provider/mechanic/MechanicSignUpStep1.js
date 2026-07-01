@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { styles } from '../mechanic/MechanicSignUpStep1.styles';
 import Icon from 'react-native-vector-icons/Ionicons';
-// Image Picker Import
+import Geolocation from 'react-native-geolocation-service';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { checkAndEnableLocation } from '../../../../services/locationService';
+
 
 const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
   const [name, setName] = useState('');
@@ -24,6 +26,26 @@ const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
   const [password, setPassword] = useState('');
   const [cnicFront, setCnicFront] = useState(null); 
   const [cnicBack, setCnicBack] = useState(null);
+  const [latitude,setLatitude]=useState(null);
+  const [longitude,setLongitude]=useState(null);
+
+  useEffect(() => {
+  Geolocation.getCurrentPosition(
+    position => {
+      setLatitude(position.coords.latitude);
+      setLongitude(position.coords.longitude);
+    },
+    error => {
+      console.log(error);
+      Alert.alert("Location Error", "Unable to get your location.");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 10000,
+    }
+  );
+  }, []);
 
   // Function to handle CNIC Selection from Gallery
   const handleCnicPick = async (side) => {
@@ -87,6 +109,8 @@ const MechanicSignUpStep1 = ({ onNext, onSignInPress }) => {
       password: password, 
       cnicFront: cnicFront,
       cnicBack: cnicBack,
+      latitude,
+      longitude,
     };
 
     if (onNext) {

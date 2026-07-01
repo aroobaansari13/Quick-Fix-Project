@@ -60,7 +60,6 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
     }
 
     setLoading(true);
-
     try {
       // 1. Create User Account directly in Firebase Authentication
       const userCredential = await auth().createUserWithEmailAndPassword(
@@ -84,11 +83,15 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
         createdAt: firestore.FieldValue.serverTimestamp(),
         cnicFrontUrl: step1Data.cnicFront?.uri || '',
         cnicBackUrl: step1Data.cnicBack?.uri || '',
-        stationName: stationName.trim(),
-        stationAddress: stationAddress.trim(),
-        licenseNumber: licenseNumber.trim(),
-        licenseExpiry: licenseExpiry.trim(),
-        stationPicName: stationPic.uri || '', 
+        stationDetails:{
+          stationName: stationName.trim(),
+          address: stationAddress.trim(),
+          licenseNumber: licenseNumber.trim(),
+          licenseExpiry: licenseExpiry.trim(),
+          stationPicName: stationPic.uri || '', 
+          latitude: step1Data.latitude || 0,
+          longitude: step1Data.longitude || 0
+        }
       });
 
       // 3. Force sign out right after registration

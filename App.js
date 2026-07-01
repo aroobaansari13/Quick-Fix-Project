@@ -19,6 +19,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore'; 
 import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import ServiceDetails from './src/screens/customer/ServiceDetails';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -26,6 +27,7 @@ const App = () => {
   const [currentScreen, setCurrentScreen] = useState('selection');
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
+  const [selectedService, setSelectedService] = useState(null);
 
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged((user) => {
@@ -165,9 +167,19 @@ const App = () => {
           onEditProfilePress={(newImage) => {
             setProfileImage(newImage); 
           }}
-          onManageProfilePress={() => setCurrentScreen('manageProfile')} 
-          // 🟢 1. 'CustomerHome' ko postman banane ke liye prop pass kiya
+          onManageProfilePress={() => setCurrentScreen('manageProfile')}
           onTermsAndPoliciesPress={() => setCurrentScreen('termsAndPolicies')} 
+          onServiceSelect={(item) => {
+            setSelectedService(item); // Click ki hui service save ki
+            setCurrentScreen('serviceDetails'); // Nayi screen par switch kiya
+          }}
+        />
+      )}
+
+      {currentScreen === 'serviceDetails' && (
+        <ServiceDetails 
+          service={selectedService} 
+          onBack={() => setCurrentScreen('customerHome')} 
         />
       )}
 
