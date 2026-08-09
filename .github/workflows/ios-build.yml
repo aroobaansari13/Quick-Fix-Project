@@ -41,7 +41,16 @@ jobs:
           cd ios
           pod install --repo-update || pod install
 
-      - name: Build iOS Archive
+      - name: Pre-bundle React Native JS
+        run: |
+          npx react-native bundle \
+            --entry-file index.js \
+            --platform ios \
+            --dev false \
+            --bundle-output ios/main.jsbundle \
+            --assets-dest ios/
+
+      - name: Build iOS App (.app)
         run: |
           cd ios
           export NODE_BINARY=$(which node)
@@ -49,19 +58,21 @@ jobs:
             -scheme QUICKFIX \
             -configuration Release \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
             CODE_SIGNING_BUILD_SETTINGS=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            clean archive -archivePath build/QUICKFIX.xcarchive
+            build
 
       - name: Package .app into .ipa
         run: |
           cd ios
           mkdir -p build/Payload
-          cp -r build/QUICKFIX.xcarchive/Products/Applications/QUICKFIX.app build/Payload/
+          cp -r build/Build/Products/Release-iphoneos/QUICKFIX.app build/Payload/
           cd build
           zip -r QUICKFIX.ipa Payload
 
