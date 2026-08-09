@@ -1,7 +1,7 @@
 name: Build QUICKFIX iOS (.ipa)
 
 on:
-  workflow_dispatch: # GitHub website se manually run karne ke liye
+  workflow_dispatch:
 
 jobs:
   build-ios:
@@ -15,10 +15,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
 
       - name: Install NPM Dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Install CocoaPods
         run: |
