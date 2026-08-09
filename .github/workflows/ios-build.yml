@@ -22,7 +22,7 @@ jobs:
       - name: Install CocoaPods
         run: |
           cd ios
-          pod install
+          pod install --repo-update || pod install
 
       - name: Build iOS Archive
         run: |
