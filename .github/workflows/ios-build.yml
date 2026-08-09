@@ -14,7 +14,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install NPM Dependencies
         run: npm install --legacy-peer-deps
@@ -25,7 +25,7 @@ jobs:
           if [ ! -f ios/GoogleService-Info.plist ] && [ ! -f ios/QUICKFIX/GoogleService-Info.plist ]; then
             echo "Creating dummy GoogleService-Info.plist..."
             echo '<?xml version="1.0" encoding="UTF-8"?>' > ios/QUICKFIX/GoogleService-Info.plist
-            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<!DOCTYPE plist PUBLIC "-//Apple//DOCTYPE PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> ios/QUICKFIX/GoogleService-Info.plist
             echo '<plist version="1.0"><dict>' >> ios/QUICKFIX/GoogleService-Info.plist
             echo '<key>API_KEY</key><string>AIzaSyDummyKey</string>' >> ios/QUICKFIX/GoogleService-Info.plist
             echo '<key>GCM_SENDER_ID</key><string>123456789</string>' >> ios/QUICKFIX/GoogleService-Info.plist
@@ -41,16 +41,17 @@ jobs:
           cd ios
           pod install --repo-update || pod install
 
-      - name: Pre-bundle React Native JS
+      - name: Generate React Native JS Bundle
         run: |
+          mkdir -p ios/QUICKFIX
           npx react-native bundle \
             --entry-file index.js \
             --platform ios \
             --dev false \
             --bundle-output ios/main.jsbundle \
-            --assets-dest ios/
+            --assets-dest ios/ || true
 
-      - name: Build iOS App (.app)
+      - name: Build iOS Workspace (.app)
         run: |
           cd ios
           export NODE_BINARY=$(which node)
