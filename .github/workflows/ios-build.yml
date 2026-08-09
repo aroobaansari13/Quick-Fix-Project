@@ -19,29 +19,31 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Ensure Firebase Config Exists
+      - name: Create Firebase Plist Files
         run: |
           mkdir -p ios/QUICKFIX
-          if [ ! -f ios/GoogleService-Info.plist ] && [ ! -f ios/QUICKFIX/GoogleService-Info.plist ]; then
-            echo "Creating dummy GoogleService-Info.plist..."
-            echo '<?xml version="1.0" encoding="UTF-8"?>' > ios/QUICKFIX/GoogleService-Info.plist
-            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '<plist version="1.0"><dict>' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '<key>API_KEY</key><string>AIzaSyDummyKey</string>' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '<key>GCM_SENDER_ID</key><string>123456789</string>' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '<key>PLIST_VERSION</key><string>1</string>' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '<key>BUNDLE_ID</key><string>com.quickfix</string>' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '<key>PROJECT_ID</key><string>quickfix-dummy</string>' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '<key>GOOGLE_APP_ID</key><string>1:123456789:ios:dummy</string>' >> ios/QUICKFIX/GoogleService-Info.plist
-            echo '</dict></plist>' >> ios/QUICKFIX/GoogleService-Info.plist
-          fi
+          cat << 'EOF' > ios/GoogleService-Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>API_KEY</key><string>AIzaSyDummyKey</string>
+            <key>GCM_SENDER_ID</key><string>123456789</string>
+            <key>PLIST_VERSION</key><string>1</string>
+            <key>BUNDLE_ID</key><string>com.quickfix</string>
+            <key>PROJECT_ID</key><string>quickfix-dummy</string>
+            <key>GOOGLE_APP_ID</key><string>1:123456789:ios:dummy</string>
+          </dict>
+          </plist>
+          EOF
+          cp ios/GoogleService-Info.plist ios/QUICKFIX/GoogleService-Info.plist
 
       - name: Install CocoaPods
         run: |
           cd ios
           pod install --repo-update || pod install
 
-      - name: Patch Pods Deployment Target (Fix gRPC-C++)
+      - name: Patch Pods Deployment Target & Disable Signing
         run: |
           cd ios
           ruby -e "
@@ -49,7 +51,8 @@ jobs:
           project = Xcodeproj::Project.open('Pods/Pods.xcodeproj')
           project.targets.each do |target|
             target.build_configurations.each do |config|
-              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+              config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
             end
           end
           project.save
@@ -65,17 +68,18 @@ jobs:
             --bundle-output ios/main.jsbundle \
             --assets-dest ios/ || true
 
-      - name: Build iOS Workspace (.app)
+      - name: Build iOS App
         run: |
           cd ios
           export NODE_BINARY=$(which node)
+          export SKIP_BUNDLING=1
           xcodebuild -workspace QUICKFIX.xcworkspace \
             -scheme QUICKFIX \
             -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build \
-            IPHONEOS_DEPLOYMENT_TARGET=14.0 \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -88,7 +92,8 @@ jobs:
         run: |
           cd ios
           mkdir -p build/Payload
-          cp -r build/Build/Products/Release-iphoneos/QUICKFIX.app build/Payload/
+          APP_PATH=$(find build/Build/Products -name "QUICKFIX.app" | head -n 1)
+          cp -r "$APP_PATH" build/Payload/
           cd build
           zip -r QUICKFIX.ipa Payload
 
