@@ -21,29 +21,19 @@ jobs:
 
       - name: Ensure Firebase Config Exists
         run: |
+          mkdir -p ios/QUICKFIX
           if [ ! -f ios/GoogleService-Info.plist ] && [ ! -f ios/QUICKFIX/GoogleService-Info.plist ]; then
-            echo "Creating temporary GoogleService-Info.plist for build..."
-            mkdir -p ios/QUICKFIX
-            cat << 'EOF' > ios/QUICKFIX/GoogleService-Info.plist
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-              <key>API_KEY</key>
-              <string>AIzaSyDummyKey</string>
-              <key>GCM_SENDER_ID</key>
-              <string>123456789</string>
-              <key>PLIST_VERSION</key>
-              <string>1</string>
-              <key>BUNDLE_ID</key>
-              <string>com.quickfix</string>
-              <key>PROJECT_ID</key>
-              <string>quickfix-dummy</string>
-              <key>GOOGLE_APP_ID</key>
-              <string>1:123456789:ios:dummy</string>
-            </dict>
-            </plist>
-            EOF
+            echo "Creating dummy GoogleService-Info.plist..."
+            echo '<?xml version="1.0" encoding="UTF-8"?>' > ios/QUICKFIX/GoogleService-Info.plist
+            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<plist version="1.0"><dict>' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<key>API_KEY</key><string>AIzaSyDummyKey</string>' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<key>GCM_SENDER_ID</key><string>123456789</string>' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<key>PLIST_VERSION</key><string>1</string>' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<key>BUNDLE_ID</key><string>com.quickfix</string>' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<key>PROJECT_ID</key><string>quickfix-dummy</string>' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '<key>GOOGLE_APP_ID</key><string>1:123456789:ios:dummy</string>' >> ios/QUICKFIX/GoogleService-Info.plist
+            echo '</dict></plist>' >> ios/QUICKFIX/GoogleService-Info.plist
           fi
 
       - name: Install CocoaPods
