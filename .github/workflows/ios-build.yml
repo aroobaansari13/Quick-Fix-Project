@@ -1,0 +1,54 @@
+name: Build QUICKFIX iOS (.ipa)
+
+on:
+  workflow_dispatch: # GitHub website se manually run karne ke liye
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build iOS Archive
+        run: |
+          cd ios
+          xcodebuild -workspace QUICKFIX.xcworkspace \
+            -scheme QUICKFIX \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_BUILD_SETTINGS=NO \
+            clean archive -archivePath build/QUICKFIX.xcarchive
+
+      - name: Package .app into .ipa
+        run: |
+          cd ios
+          mkdir -p build/Payload
+          cp -r build/QUICKFIX.xcarchive/Products/Applications/QUICKFIX.app build/Payload/
+          cd build
+          zip -r QUICKFIX.ipa Payload
+
+      - name: Upload .ipa Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QUICKFIX-iOS-IPA
+          path: ios/build/QUICKFIX.ipa

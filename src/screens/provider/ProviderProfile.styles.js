@@ -1,36 +1,57 @@
 import { StyleSheet } from 'react-native';
-import { COLORS } from '../../config/theme';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF', // Clean white background jaise pehle tha
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
+  loadingText: {
+    marginTop: 10,
+    color: '#64748B',
+    fontWeight: '500',
+    fontSize: 14,
+  },
   header: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 30,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    paddingTop: 40,
+    paddingBottom: 25,
+    backgroundColor: '#FFFFFF',
   },
   profileImageContainer: {
     alignItems: 'center',
+    position: 'relative',
   },
   imageWrapper: {
     position: 'relative',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   profileImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#F1F5F9',
+  },
+  placeholderImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
   },
   editBadge: {
     position: 'absolute',
     bottom: 0,
-    right: 5,
-    backgroundColor: COLORS.primary || '#1E3A8A',
+    right: 4,
+    backgroundColor: '#1E3A8A', // Dark blue camera badge
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -38,33 +59,36 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
-    elevation: 3,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
   },
   userName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#1E293B',
-    marginBottom: 4,
+    textAlign: 'center',
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#64748B',
+    marginTop: 6,
+    fontWeight: '400',
+    textAlign: 'center',
   },
   menuSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 24,
+    marginTop: 10,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'between',
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F8FAFC',
+    borderBottomColor: '#F1F5F9', // Subtle bottom line divider
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -74,11 +98,11 @@ export const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 16,
     fontWeight: '500',
-    marginLeft: 15,
+    marginLeft: 16,
   },
   separator: {
     height: 1,
-    backgroundColor: '#E2E8F0',
-    marginVertical: 15,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 10,
   },
 });

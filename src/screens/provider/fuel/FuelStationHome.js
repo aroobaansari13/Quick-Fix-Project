@@ -8,7 +8,7 @@ import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 
-const FuelStationHome = () => {
+const FuelStationHome = ({ onLogout }) => { // 🟢 Main App.js se aane wala logout support handle karne ke liye
   const [activeTab, setActiveTab] = useState('home');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]);
@@ -18,7 +18,7 @@ const FuelStationHome = () => {
   const [checkingLocation, setCheckingLocation] = useState(true);
 
   useEffect(() => {
-    // 🟢 Location & Services Initialization
+    // Location & Services Initialization
     const initApp = async () => {
       const isLocationOn = await checkAndEnableLocation();
       if (!isLocationOn) {
@@ -90,7 +90,16 @@ const FuelStationHome = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'orders': return <ProviderOrders />;
-      case 'profile': return <ProviderProfile onLogout={() => auth().signOut()} />;
+      
+      // 🟢 Hal yahan hai: providerType="fuelStation" explicit pass kar diya hai taake picture split alag ho jaye
+      case 'profile': 
+        return (
+          <ProviderProfile 
+            providerType="fuelStation" 
+            onLogout={onLogout || (() => auth().signOut())} 
+          />
+        );
+        
       case 'home':
       default:
         return (
@@ -184,9 +193,18 @@ const FuelStationHome = () => {
       </Modal>
 
       <View style={styles.bottomTab}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}><Icon name={activeTab==='home'?'home':'home-outline'} size={26} color={activeTab==='home'?'#1E3A8A':'#94A3B8'} /><Text>Home</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}><Icon name={activeTab==='orders'?'clipboard':'clipboard-outline'} size={26} color={activeTab==='orders'?'#1E3A8A':'#94A3B8'} /><Text>Orders</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}><Icon name={activeTab==='profile'?'person':'person-outline'} size={26} color={activeTab==='profile'?'#1E3A8A':'#94A3B8'} /><Text>Profile</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}>
+          <Icon name={activeTab==='home'?'home':'home-outline'} size={26} color={activeTab==='home'?'#1E3A8A':'#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab==='home'?'#1E3A8A':'#94A3B8', fontWeight: '500' }}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}>
+          <Icon name={activeTab==='orders'?'clipboard':'clipboard-outline'} size={26} color={activeTab==='orders'?'#1E3A8A':'#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab==='orders'?'#1E3A8A':'#94A3B8', fontWeight: '500' }}>Orders</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}>
+          <Icon name={activeTab==='profile'?'person':'person-outline'} size={26} color={activeTab==='profile'?'#1E3A8A':'#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab==='profile'?'#1E3A8A':'#94A3B8', fontWeight: '500' }}>Profile</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

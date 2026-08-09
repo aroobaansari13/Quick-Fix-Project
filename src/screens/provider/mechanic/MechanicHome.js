@@ -8,7 +8,7 @@ import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 
-const MechanicHome = () => {
+const MechanicHome = ({ onLogout }) => { // 🟢 Main App.js se logout support handle karne ke liye prop add kiya
   const [activeTab, setActiveTab] = useState('home');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]); 
@@ -20,7 +20,7 @@ const MechanicHome = () => {
   const [checkingLocation, setCheckingLocation] = useState(true);
 
   useEffect(() => {
-    // 🟢 Logic to handle Location and Services in one go
+    // Logic to handle Location and Services in one go
     const initApp = async () => {
       // 1. Location Logic
       const isLocationOn = await checkAndEnableLocation();
@@ -101,8 +101,16 @@ const MechanicHome = () => {
     switch (activeTab) {
       case 'orders':
         return <ProviderOrders />;
+      
+      // 🟢 Fix: providerType="mechanic" explicitly pass kar diya hai taake storage conflicts na hon
       case 'profile':
-        return <ProviderProfile onLogout={() => auth().signOut()} />;
+        return (
+          <ProviderProfile 
+            providerType="mechanic" 
+            onLogout={onLogout || (() => auth().signOut())} 
+          />
+        );
+        
       case 'home':
       default:
         return (
@@ -206,9 +214,18 @@ const MechanicHome = () => {
       </Modal>
 
       <View style={styles.bottomTab}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}><Icon name={activeTab === 'home' ? 'home' : 'home-outline'} size={26} color={activeTab === 'home' ? '#1E3A8A' : '#94A3B8'} /><Text>Home</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}><Icon name={activeTab === 'orders' ? 'clipboard' : 'clipboard-outline'} size={26} color={activeTab === 'orders' ? '#1E3A8A' : '#94A3B8'} /><Text>Orders</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}><Icon name={activeTab === 'profile' ? 'person' : 'person-outline'} size={26} color={activeTab === 'profile' ? '#1E3A8A' : '#94A3B8'} /><Text>Profile</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}>
+          <Icon name={activeTab === 'home' ? 'home' : 'home-outline'} size={26} color={activeTab === 'home' ? '#1E3A8A' : '#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab === 'home' ? '#1E3A8A' : '#94A3B8', fontWeight: '500' }}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}>
+          <Icon name={activeTab === 'orders' ? 'clipboard' : 'clipboard-outline'} size={26} color={activeTab === 'orders' ? '#1E3A8A' : '#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab === 'orders' ? '#1E3A8A' : '#94A3B8', fontWeight: '500' }}>Orders</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}>
+          <Icon name={activeTab === 'profile' ? 'person' : 'person-outline'} size={26} color={activeTab === 'profile' ? '#1E3A8A' : '#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab === 'profile' ? '#1E3A8A' : '#94A3B8', fontWeight: '500' }}>Profile</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
