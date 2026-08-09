@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import firestore from '@react-native-firebase/firestore';
 import { styles } from './ServiceDetails.styles';
 import { COLORS } from '../../config/theme';
+import CheckoutScreen from './CheckoutScreen'; 
 
 const ServiceDetails = ({ service, onNext }) => {
   const [servicesList, setServicesList] = useState([]);
@@ -34,6 +35,18 @@ const ServiceDetails = ({ service, onNext }) => {
     setSelectedServices(prev => 
       prev.includes(id) ? prev.filter(sId => sId !== id) : [...prev, id]
     );
+  };
+
+  const handleNextPress = () => {
+    // Selected IDs ke mutabiq poore service objects (title, price, id) nikalna
+    const selectedDetails = servicesList.filter(s => selectedServices.includes(s.id));
+    
+    // Parent component ko data pass karna
+    onNext({
+      selectedServicesDetails: selectedDetails,
+      description: description,
+      provider: service
+    });
   };
 
   if (loading) return <ActivityIndicator style={{flex:1}} color={COLORS.primary} />;
@@ -96,7 +109,7 @@ const ServiceDetails = ({ service, onNext }) => {
       {/* Section 4: Next Button */}
       <TouchableOpacity 
         style={styles.nextButton} 
-        onPress={() => onNext({selectedServices, description})}
+        onPress={handleNextPress}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>

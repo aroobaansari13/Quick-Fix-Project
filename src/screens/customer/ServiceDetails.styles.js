@@ -142,7 +142,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 20,
     alignItems: 'center',
-    elevation: 6,
+    elevation: 0,
   },
   nextButtonText: {
     color: '#FFFFFF',

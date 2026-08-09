@@ -20,6 +20,7 @@ import firestore from '@react-native-firebase/firestore';
 import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ServiceDetails from './src/screens/customer/ServiceDetails';
+import CheckoutScreen from './src/screens/customer/CheckoutScreen';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -28,6 +29,7 @@ const App = () => {
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
   const [selectedService, setSelectedService] = useState(null);
+  const [checkoutData, setCheckoutData] = useState(null);
 
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged((user) => {
@@ -180,6 +182,17 @@ const App = () => {
         <ServiceDetails 
           service={selectedService} 
           onBack={() => setCurrentScreen('customerHome')} 
+          onNext={(data) => {
+            setCheckoutData(data);
+            setCurrentScreen('checkout');
+          }}
+        />
+      )}
+
+      {currentScreen === 'checkout' && (
+        <CheckoutScreen
+         data={checkoutData}
+         onBack={() => setCurrentScreen('serviceDetails')}
         />
       )}
 
