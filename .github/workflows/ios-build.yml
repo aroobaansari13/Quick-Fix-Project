@@ -19,6 +19,33 @@ jobs:
       - name: Install NPM Dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Ensure Firebase Config Exists
+        run: |
+          if [ ! -f ios/GoogleService-Info.plist ] && [ ! -f ios/QUICKFIX/GoogleService-Info.plist ]; then
+            echo "Creating temporary GoogleService-Info.plist for build..."
+            mkdir -p ios/QUICKFIX
+            cat << 'EOF' > ios/QUICKFIX/GoogleService-Info.plist
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+              <key>API_KEY</key>
+              <string>AIzaSyDummyKey</string>
+              <key>GCM_SENDER_ID</key>
+              <string>123456789</string>
+              <key>PLIST_VERSION</key>
+              <string>1</string>
+              <key>BUNDLE_ID</key>
+              <string>com.quickfix</string>
+              <key>PROJECT_ID</key>
+              <string>quickfix-dummy</string>
+              <key>GOOGLE_APP_ID</key>
+              <string>1:123456789:ios:dummy</string>
+            </dict>
+            </plist>
+            EOF
+          fi
+
       - name: Install CocoaPods
         run: |
           cd ios
@@ -27,6 +54,7 @@ jobs:
       - name: Build iOS Archive
         run: |
           cd ios
+          export NODE_BINARY=$(which node)
           xcodebuild -workspace QUICKFIX.xcworkspace \
             -scheme QUICKFIX \
             -configuration Release \
@@ -36,6 +64,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_BUILD_SETTINGS=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             clean archive -archivePath build/QUICKFIX.xcarchive
 
       - name: Package .app into .ipa
