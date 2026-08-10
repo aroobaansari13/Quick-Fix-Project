@@ -99,5 +99,28 @@ export const ServiceRequestService = {
       console.error("Error updating request status: ", error);
       return { success: false, error: error.message };
     }
-  }
+  },
+
+  subscribeCustomerRequests(customerId, callback) {
+    return firestore()
+    .collection('ServiceRequests')
+    .where('customerId', '==', customerId)
+    .onSnapshot(
+      snapshot => {
+        const requests = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        callback(requests);
+      },
+      error => {
+        console.error(
+          "Error fetching customer requests: ",
+          error
+        );
+        callback([]);
+      }
+    );
+  },
 };
