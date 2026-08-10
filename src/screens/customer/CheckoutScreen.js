@@ -1,10 +1,20 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert
+} from 'react-native';
 import { styles } from './CheckoutScreen.styles';
 import { COLORS } from '../../config/theme';
+import { ServiceRequestService } from '../../services/ServiceRequestService';
 
 const CheckoutScreen = ({ data, onBack }) => {
 
+  const [loading, setLoading] = useState(false);
   // ServiceDetails se App.js ke through pass kiya gaya data
   const {
     selectedServicesDetails = [],
@@ -20,13 +30,50 @@ const CheckoutScreen = ({ data, onBack }) => {
     );
   };
 
-  const handleConfirmOrder = () => {
-    console.log("Order Placed:", {
+  const handleConfirmOrder = async () => {
+  try {
+    setLoading(true);
+
+    const result = await ServiceRequestService.createServiceRequest({
       selectedServicesDetails,
       description,
-      total: calculateTotal()
+      provider
     });
-  };
+
+    setLoading(false);
+
+    if (result.success) {
+      Alert.alert(
+        "Request Submitted",
+        "Your service request has been submitted successfully!",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              if (onBack) {
+                onBack();
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert(
+        "Error",
+        result.error || "Failed to submit service request."
+      );
+    }
+
+  } catch (error) {
+    setLoading(false);
+    console.error("Submit Request Error:", error);
+
+    Alert.alert(
+      "Error",
+      error.message || "Something went wrong."
+    );
+  }
+};
   
   return (
     <SafeAreaView style={styles.container}>
@@ -60,9 +107,16 @@ const CheckoutScreen = ({ data, onBack }) => {
 
       </ScrollView>
 
-      {/* Confirm & Proceed Button */}
-      <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmOrder}>
-        <Text style={styles.confirmButtonText}>Submit Request</Text>
+      <TouchableOpacity
+        style={[styles.confirmButton, loading && { opacity: 0.7 }]}
+        onPress={handleConfirmOrder}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.confirmButtonText}>Submit Request</Text>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );

@@ -4,12 +4,14 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import { styles } from '../mechanic/MechanicHome.styles';
 import ProviderOrders from '../ProviderOrders';
+import ProviderRequestDetails from '../ProviderRequestDetails';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 
 const MechanicHome = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]); 
   const [serviceName, setServiceName] = useState('');
@@ -100,7 +102,25 @@ const MechanicHome = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'orders':
-        return <ProviderOrders />;
+      return (
+        <ProviderOrders
+          onViewDetails={(request) => {
+            console.log('Opening Request Details:', request);
+              setSelectedRequest(request);
+          setActiveTab('requestDetails');
+          }}
+        />
+      );
+      case 'requestDetails':
+        return (
+          <ProviderRequestDetails
+            request={selectedRequest}
+            onBack={() => {
+              setSelectedRequest(null);
+              setActiveTab('orders');
+            }}
+          />
+        );
       case 'profile':
         return <ProviderProfile onLogout={() => auth().signOut()} />;
       case 'home':

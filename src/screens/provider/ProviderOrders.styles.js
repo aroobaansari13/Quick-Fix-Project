@@ -62,4 +62,62 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  requestCard: {
+  backgroundColor: '#FFFFFF',
+  borderRadius: 15,
+  padding: 15,
+  marginBottom: 15,
+  elevation: 4,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 2,
+  },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+},
+
+customerInfo: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  flex: 1,
+},
+
+profileImage: {
+  width: 55,
+  height: 55,
+  borderRadius: 28,
+  backgroundColor: '#E5E7EB',
+},
+
+customerText: {
+  marginLeft: 12,
+  flex: 1,
+},
+
+customerName: {
+  fontSize: 17,
+  fontWeight: '700',
+  color: '#111827',
+},
+
+requestStatus: {
+  fontSize: 13,
+  color: '#6B7280',
+  marginTop: 4,
+},
+
+viewDetailsButton: {
+  marginTop: 15,
+  backgroundColor: COLORS.primary,
+  paddingVertical: 11,
+  borderRadius: 10,
+  alignItems: 'center',
+},
+
+viewDetailsText: {
+  color: '#FFFFFF',
+  fontSize: 14,
+  fontWeight: '600',
+},
 });
