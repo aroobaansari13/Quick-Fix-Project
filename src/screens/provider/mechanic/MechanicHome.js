@@ -4,14 +4,12 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import { styles } from '../mechanic/MechanicHome.styles';
 import ProviderOrders from '../ProviderOrders';
-import ProviderRequestDetails from '../ProviderRequestDetails';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 
-const MechanicHome = ({ onLogout }) => { // 🟢 Main App.js se logout support handle karne ke liye prop add kiya
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedRequest, setSelectedRequest] = useState(null);
+const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]); 
   const [serviceName, setServiceName] = useState('');
@@ -104,29 +102,21 @@ const MechanicHome = ({ onLogout }) => { // 🟢 Main App.js se logout support h
       case 'orders':
         return <ProviderOrders />;
       
-      // 🟢 Fix: providerType="mechanic" explicitly pass kar diya hai taake storage conflicts na hon
-      return (
-        <ProviderOrders
-          onViewDetails={(request) => {
-            console.log('Opening Request Details:', request);
-              setSelectedRequest(request);
-          setActiveTab('requestDetails');
-          }}
-        />
-      );
-      case 'requestDetails':
-        return (
-          <ProviderRequestDetails
-            request={selectedRequest}
-            onBack={() => {
-              setSelectedRequest(null);
-              setActiveTab('orders');
-            }}
-          />
-        );
+      // 🟢 ProviderProfile wrapping + Flexible Availability & Settings Screen handler
       case 'profile':
         return (
           <ProviderProfile 
+            navigation={{
+              ...navigation,
+              navigate: (screen, params) => {
+                const lowerScreen = screen?.toLowerCase() || '';
+                if (lowerScreen.includes('availability') || lowerScreen.includes('setting')) {
+                  navigation?.navigate('AvailabilityScreen', { providerType: 'mechanic', ...params });
+                } else if (navigation?.navigate) {
+                  navigation.navigate(screen, params);
+                }
+              }
+            }}
             providerType="mechanic" 
             onLogout={onLogout || (() => auth().signOut())} 
           />

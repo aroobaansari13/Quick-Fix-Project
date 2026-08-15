@@ -1,17 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; 
 import { View, Text, TouchableOpacity, StatusBar, Image, ScrollView, Modal, TextInput, FlatList, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import { styles } from '../fuel/FuelStationHome.styles';
 import ProviderOrders from '../ProviderOrders';
-import ProviderRequestDetails from '../ProviderRequestDetails';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 
-const FuelStationHome = ({ onLogout }) => { // 🟢 Main App.js se aane wala logout support handle karne ke liye
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedRequest, setSelectedRequest] = useState(null);
+const FuelStationHome = ({ navigation, onLogout, initialTab = 'home' }) => { // 🟢 initialTab support handle kar diya
+  const [activeTab, setActiveTab] = useState(initialTab); // 🟢 initialTab set kar diya
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]);
   const [fuelType, setFuelType] = useState('');
@@ -93,44 +91,26 @@ const FuelStationHome = ({ onLogout }) => { // 🟢 Main App.js se aane wala log
     switch (activeTab) {
       case 'orders': return <ProviderOrders />;
       
-      // 🟢 Hal yahan hai: providerType="fuelStation" explicit pass kar diya hai taake picture split alag ho jaye
+      // 🟢 ProviderProfile wrapping + Flexible Availability & Settings Screen handler
       case 'profile': 
         return (
           <ProviderProfile 
+            navigation={{
+              ...navigation,
+              navigate: (screen, params) => {
+                const lowerScreen = screen?.toLowerCase() || '';
+                if (lowerScreen.includes('availability') || lowerScreen.includes('setting')) {
+                  navigation?.navigate('AvailabilityScreen', { providerType: 'fuel_station', ...params });
+                } else if (navigation?.navigate) {
+                  navigation.navigate(screen, params);
+                }
+              }
+            }}
             providerType="fuelStation" 
             onLogout={onLogout || (() => auth().signOut())} 
           />
         );
         
-      case 'orders':
-      return (
-        <ProviderOrders
-          onViewDetails={(request) => {
-            console.log('Opening Request Details:', request);
-            setSelectedRequest(request);
-            setActiveTab('requestDetails');
-          }}
-        />
-      );
-
-     case 'requestDetails':
-      return (
-        <ProviderRequestDetails
-          request={selectedRequest}
-          onBack={() => {
-            setSelectedRequest(null);
-            setActiveTab('orders');
-          }}
-        />
-      );
-
-      case 'profile':
-      return (
-        <ProviderProfile
-          onLogout={() => auth().signOut()}
-        />
-      );
-
       case 'home':
       default:
         return (

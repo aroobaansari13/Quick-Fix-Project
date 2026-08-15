@@ -5,7 +5,7 @@ import UserSelection from './src/screens/auth/UserSelection';
 import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
 import CustomerHome from './src/screens/customer/CustomerHome';
 import ManageProfile from './src/screens/customer/ManageProfile'; 
-import TermsAndPolicies from './src/screens/customer/TermsAndPolicies'; // 🌟 Nayi screen import ki
+import TermsAndPolicies from './src/screens/customer/TermsAndPolicies'; 
 import SignIn from './src/screens/SignIn';
 import ProviderSelection from './src/screens/auth/provider/ProviderSelection';
 import MechanicSignUpContainer from './src/screens/auth/provider/mechanic/MechanicSignUpContainer';
@@ -21,6 +21,9 @@ import AdminPendingApplications from './src/screens/admin/AdminPendingApplicatio
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ServiceDetails from './src/screens/customer/ServiceDetails';
 import CheckoutScreen from './src/screens/customer/CheckoutScreen';
+import BusinessDetails from './src/screens/provider/BusinessDetails';
+// 🟢 1. Import AvailabilityScreen
+import AvailabilityScreen from './src/screens/provider/AvailabilityScreen';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -28,8 +31,11 @@ const App = () => {
   const [currentScreen, setCurrentScreen] = useState('selection');
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
+  const [providerActiveTab, setProviderActiveTab] = useState('home'); // 🟢 Provider Tab state
   const [selectedService, setSelectedService] = useState(null);
   const [checkoutData, setCheckoutData] = useState(null);
+  
+  const [businessProviderType, setBusinessProviderType] = useState('mechanic');
 
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged((user) => {
@@ -41,6 +47,7 @@ const App = () => {
     });
     return () => unsubscribe();
   }, [isShowSplash]);
+
   if (isShowSplash) {
     return <SplashScreen onFinish={() => setIsShowSplash(false)} />;
   }
@@ -110,6 +117,7 @@ const App = () => {
             if (targetScreen === 'pendingReview') {
                setCurrentScreen('pendingReview');
             } else {
+                setProviderActiveTab('home');
                 setCurrentScreen('mechanicHome');
             }
           }}
@@ -117,7 +125,22 @@ const App = () => {
       )}
 
       {currentScreen === 'mechanicHome' && (
-        <MechanicHome onLogout={() => setCurrentScreen('signIn')} />
+        <MechanicHome 
+          initialTab={providerActiveTab}
+          onLogout={() => setCurrentScreen('signIn')} 
+          navigation={{
+            navigate: (screen, params) => {
+              if (screen === 'BusinessDetails') {
+                setBusinessProviderType(params?.providerType || 'mechanic');
+                setCurrentScreen('businessDetails');
+              } else if (screen === 'AvailabilityScreen') {
+                // 🟢 Navigation link for AvailabilityScreen
+                setBusinessProviderType(params?.providerType || 'mechanic');
+                setCurrentScreen('availabilityScreen');
+              }
+            }
+          }}
+        />
       )}
 
       {currentScreen === 'fuelStationFlow' && (
@@ -128,6 +151,7 @@ const App = () => {
             if (targetScreen === 'pendingReview') {
               setCurrentScreen('pendingReview'); 
             } else {
+              setProviderActiveTab('home');
               setCurrentScreen('fuelStationHome'); 
             }
           }} 
@@ -135,7 +159,22 @@ const App = () => {
       )}
 
       {currentScreen === 'fuelStationHome' && (
-        <FuelStationHome onLogout={() => setCurrentScreen('signIn')} />
+        <FuelStationHome 
+          initialTab={providerActiveTab}
+          onLogout={() => setCurrentScreen('signIn')} 
+          navigation={{
+            navigate: (screen, params) => {
+              if (screen === 'BusinessDetails') {
+                setBusinessProviderType(params?.providerType || 'fuel_station');
+                setCurrentScreen('businessDetails');
+              } else if (screen === 'AvailabilityScreen') {
+                // 🟢 Navigation link for AvailabilityScreen
+                setBusinessProviderType(params?.providerType || 'fuel_station');
+                setCurrentScreen('availabilityScreen');
+              }
+            }
+          }}
+        />
       )}
 
       {currentScreen === 'pendingReview' && (
@@ -155,6 +194,7 @@ const App = () => {
           onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
         />
       )}
+      
       {currentScreen === 'pendingAppsList' && (
         <AdminPendingApplications 
           onBack={() => setCurrentScreen('adminDashboard')} 
@@ -172,8 +212,8 @@ const App = () => {
           onManageProfilePress={() => setCurrentScreen('manageProfile')}
           onTermsAndPoliciesPress={() => setCurrentScreen('termsAndPolicies')} 
           onServiceSelect={(item) => {
-            setSelectedService(item); // Click ki hui service save ki
-            setCurrentScreen('serviceDetails'); // Nayi screen par switch kiya
+            setSelectedService(item); 
+            setCurrentScreen('serviceDetails'); 
           }}
         />
       )}
@@ -207,17 +247,48 @@ const App = () => {
         />
       )}
 
-      {/* 🟢 2. TermsAndPolicies Screen ka navigation route */}
       {currentScreen === 'termsAndPolicies' && (
         <TermsAndPolicies 
           navigation={{
             goBack: () => {
-              setCustomerActiveTab('profile'); // Back jane par default profile tab hi open rahega
+              setCustomerActiveTab('profile'); 
               setCurrentScreen('customerHome');
             }
           }} 
         />
       )}
+
+      {/* 🟢 Business Details Block */}
+      {currentScreen === 'businessDetails' && (
+        <BusinessDetails 
+          route={{ params: { providerType: businessProviderType } }}
+          navigation={{
+            goBack: () => {
+              setProviderActiveTab('profile');
+              setCurrentScreen(businessProviderType === 'mechanic' ? 'mechanicHome' : 'fuelStationHome');
+            }
+          }}
+        />
+      )}
+
+      {/* 🟢 2. Availability Screen Block - Route prop added here */}
+      {currentScreen === 'availabilityScreen' && (
+        <AvailabilityScreen 
+          route={{ params: { providerType: businessProviderType } }}
+          navigation={{
+            canGoBack: () => true,
+            goBack: () => {
+              setProviderActiveTab('profile');
+              setCurrentScreen(businessProviderType === 'mechanic' ? 'mechanicHome' : 'fuelStationHome');
+            },
+            navigate: (screen) => {
+              setProviderActiveTab('profile');
+              setCurrentScreen(businessProviderType === 'mechanic' ? 'mechanicHome' : 'fuelStationHome');
+            }
+          }}
+        />
+      )}
+
     </View>
   );
 };
