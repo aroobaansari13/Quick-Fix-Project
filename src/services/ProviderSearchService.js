@@ -42,7 +42,9 @@ export const searchNearbyServices = async (searchQuery, customerLat, customerLon
               providerName: pData.name || "Unknown",
               businessName: details.shopName || details.stationName || "No Business Name",
               address: details.address || "No Address",
-              distance: dist.toFixed(1)
+              distance: dist.toFixed(1),
+              providerType: providerRole, // ✅ Yeh add karo
+              providerId: providerId,     
             });
           }
         } else {

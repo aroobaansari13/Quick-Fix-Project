@@ -8,6 +8,7 @@ import ProviderRequestDetails from '../ProviderRequestDetails';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
+import { ProviderLocationService } from '../../../services/ProviderLocationService';
 
 const FuelStationHome = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -40,8 +41,18 @@ const FuelStationHome = () => {
       });
     }
 
+    let locationWatchId = null;
+    if (uid) {
+      locationWatchId = ProviderLocationService.startTracking(uid, 'FuelStations');
+      console.log('📍 Watch ID:', locationWatchId);
+    }
+
     return () => {
       if (unsubscribe) unsubscribe();
+
+      if (locationWatchId !== null) {
+        ProviderLocationService.stopTracking(locationWatchId);
+      }
     };
   }, []);
 

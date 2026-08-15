@@ -45,6 +45,9 @@ const CustomerOrderCard = ({ item, onTrack }) => {
         ]}
         onPress={() => {
           if (isAccepted && onTrack) {
+            console.log('TRACK REQUEST PROVIDER ID:', item.providerId);
+            console.log('TRACK REQUEST:', item);
+            console.log('🔥 PROVIDER TYPE:', item.providerType);
             onTrack(item);
           }
         }}
