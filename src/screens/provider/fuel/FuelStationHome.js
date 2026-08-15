@@ -4,12 +4,14 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import { styles } from '../fuel/FuelStationHome.styles';
 import ProviderOrders from '../ProviderOrders';
+import ProviderRequestDetails from '../ProviderRequestDetails';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 
 const FuelStationHome = ({ onLogout }) => { // 🟢 Main App.js se aane wala logout support handle karne ke liye
   const [activeTab, setActiveTab] = useState('home');
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]);
   const [fuelType, setFuelType] = useState('');
@@ -100,6 +102,35 @@ const FuelStationHome = ({ onLogout }) => { // 🟢 Main App.js se aane wala log
           />
         );
         
+      case 'orders':
+      return (
+        <ProviderOrders
+          onViewDetails={(request) => {
+            console.log('Opening Request Details:', request);
+            setSelectedRequest(request);
+            setActiveTab('requestDetails');
+          }}
+        />
+      );
+
+     case 'requestDetails':
+      return (
+        <ProviderRequestDetails
+          request={selectedRequest}
+          onBack={() => {
+            setSelectedRequest(null);
+            setActiveTab('orders');
+          }}
+        />
+      );
+
+      case 'profile':
+      return (
+        <ProviderProfile
+          onLogout={() => auth().signOut()}
+        />
+      );
+
       case 'home':
       default:
         return (
