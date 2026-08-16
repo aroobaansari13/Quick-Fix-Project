@@ -23,9 +23,26 @@ export const searchNearbyServices = async (searchQuery, customerLat, customerLon
       if (providerDoc.exists) {
         const pData = providerDoc.data();
         
-        // 2. Safely access location data
         const details = providerRole === 'fuel_station' ? pData.stationDetails : pData.shopDetails;
 
+        // 🟢 AVAILABILITY FILTER: Agar provider offline hai toh skip karein
+        const isOffline = 
+          pData.isOnline === false || 
+          pData.isAvailable === false || 
+          pData.availabilityStatus === false || 
+          pData.availabilityStatus === 'offline' ||
+          pData.status === 'offline' ||
+          details?.isOnline === false ||
+          details?.isAvailable === false ||
+          details?.availabilityStatus === false ||
+          details?.availabilityStatus === 'offline';
+
+        if (isOffline) {
+          console.log(`Skipping provider ${providerId} as they are offline.`);
+          continue; // Offline provider ko result mein add nahi karega
+        }
+
+        // 2. Safely access location data
         if (details && typeof details.latitude !== 'undefined' && typeof details.longitude !== 'undefined') {
           const lat = parseFloat(details.latitude);
           const lng = parseFloat(details.longitude);
@@ -54,11 +71,11 @@ export const searchNearbyServices = async (searchQuery, customerLat, customerLon
     }
     return results;
   } catch (error) {
-  console.log("============== SEARCH ERROR ==============");
-  console.log(error);
-  console.log(error.code);
-  console.log(error.message);
-  console.log("=========================================");
-  throw error;
-}
+    console.log("============== SEARCH ERROR ==============");
+    console.log(error);
+    console.log(error.code);
+    console.log(error.message);
+    console.log("=========================================");
+    throw error;
+  }
 };
