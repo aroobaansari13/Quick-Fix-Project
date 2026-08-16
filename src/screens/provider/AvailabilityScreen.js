@@ -13,76 +13,128 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { styles } from './AvailabilityScreen.styles';
 
-const AvailabilityScreen = ({ navigation, route }) => {
-  // Provider type check
-  const providerType = route?.params?.providerType || '';
-  const isFuelStation = providerType.toLowerCase().includes('fuel');
-  
-  // Dynamic collection select
-  const collectionName = isFuelStation ? 'FuelStations' : 'Mechanics';
-
+const AvailabilityScreen = ({ navigation }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userCollection, setUserCollection] = useState(null);
+  const [targetDocId, setTargetDocId] = useState(null);
 
-  const uid = auth().currentUser?.uid;
+  const currentUser = auth().currentUser;
+  const uid = currentUser?.uid;
+  const userEmail = currentUser?.email;
 
   useEffect(() => {
-    if (!uid) { 
+    if (!uid && !userEmail) { 
       setLoading(false); 
       return; 
     }
 
-    // Direct existing collection (FuelStations / Mechanics) se fetch karega
-    const unsubscribe = firestore()
-      .collection(collectionName)
-      .doc(uid)
-      .onSnapshot(
-        (doc) => {
-          if (doc && doc.exists) {
-            const data = doc.data() || {};
-            setIsOnline(data?.isOnline ?? false);
-          } else {
-            setIsOnline(false);
+    const findProfileDoc = async () => {
+      try {
+        // 1. Check FuelStations by UID
+        if (uid) {
+          const fuelDoc = await firestore().collection('FuelStations').doc(uid).get();
+          if (fuelDoc.exists) {
+            setUserCollection('FuelStations');
+            setTargetDocId(uid);
+            setIsOnline(fuelDoc.data()?.isOnline ?? false);
+            setLoading(false);
+            return;
           }
-          setLoading(false);
-        },
-        (error) => {
-          console.log(`Error fetching ${collectionName} status:`, error);
-          setLoading(false);
         }
-      );
 
-    return () => unsubscribe();
-  }, [uid, collectionName]);
+        // 2. Check Mechanics by UID
+        if (uid) {
+          const mechDoc = await firestore().collection('Mechanics').doc(uid).get();
+          if (mechDoc.exists) {
+            setUserCollection('Mechanics');
+            setTargetDocId(uid);
+            setIsOnline(mechDoc.data()?.isOnline ?? false);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // 3. Check FuelStations by Email
+        if (userEmail) {
+          const fuelByEmail = await firestore()
+            .collection('FuelStations')
+            .where('email', '==', userEmail)
+            .get();
+
+          if (!fuelByEmail.empty) {
+            const foundId = fuelByEmail.docs[0].id;
+            setUserCollection('FuelStations');
+            setTargetDocId(foundId);
+            setIsOnline(fuelByEmail.docs[0].data()?.isOnline ?? false);
+            setLoading(false);
+            return;
+          }
+
+          // 4. Check Mechanics by Email
+          const mechByEmail = await firestore()
+            .collection('Mechanics')
+            .where('email', '==', userEmail)
+            .get();
+
+          if (!mechByEmail.empty) {
+            const foundId = mechByEmail.docs[0].id;
+            setUserCollection('Mechanics');
+            setTargetDocId(foundId);
+            setIsOnline(mechByEmail.docs[0].data()?.isOnline ?? false);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (error) {
+        console.log('Error finding profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    findProfileDoc();
+  }, [uid, userEmail]);
 
   const toggleOnlineStatus = async (value) => {
+    if (!userCollection || !targetDocId) {
+      Alert.alert("Error", "Unable to update status. Profile not synced.");
+      return;
+    }
+
     setIsOnline(value);
-    if (!uid) return;
 
     try {
-      // Direct selected collection ke document me update/set karega
+      const updateData = {
+        isOnline: value,
+        isAvailable: value,
+        availabilityStatus: value ? 'online' : 'offline',
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      };
+
+      if (userCollection === 'FuelStations') {
+        updateData['stationDetails.isOnline'] = value;
+      } else {
+        updateData['shopDetails.isOnline'] = value;
+      }
+
+      // Merge: true hone ki waja se agar isOnline ki field pehle nahi thi, toh nayi create ho jayegi
       await firestore()
-        .collection(collectionName)
-        .doc(uid)
-        .set(
-          {
-            isOnline: value,
-            updatedAt: firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
+        .collection(userCollection)
+        .doc(targetDocId)
+        .set(updateData, { merge: true });
+
     } catch (error) {
       console.log('Update Error:', error);
-      Alert.alert('Error', 'Failed to update status');
+      Alert.alert('Error', 'Failed to update availability status.');
+      setIsOnline(!value);
     }
   };
 
-  // Back Track Handler
   const handleBackPress = () => {
     if (navigation?.canGoBack()) {
       navigation.goBack();
     } else {
-      // Apni Profile Screen ka exact route name yahan likhein (e.g. 'ProviderProfile' ya 'Profile')
       navigation?.navigate('ProviderProfile'); 
     }
   };

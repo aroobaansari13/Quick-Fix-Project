@@ -66,7 +66,20 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, 
       setLoadingSearch(true);
       try {
         const results = await searchNearbyServices(text, coordinates.lat, coordinates.lng);
-        setSearchResults(results);
+        
+        // 🟢 Offline Providers Filter: Sirf wohi show honge jin ka availability/online status true hai
+        const activeResults = results.filter((item) => {
+          const isOffline = 
+            item.isOnline === false || 
+            item.isAvailable === false || 
+            item.availabilityStatus === false || 
+            item.availabilityStatus === 'offline' ||
+            item.status === 'offline';
+            
+          return !isOffline;
+        });
+
+        setSearchResults(activeResults);
       } catch (e) {
         Alert.alert("Error", e.message);
       } finally {
