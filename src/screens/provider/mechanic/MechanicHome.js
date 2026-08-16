@@ -7,6 +7,7 @@ import ProviderOrders from '../ProviderOrders';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
+import { ProviderLocationService } from '../../../services/ProviderLocationService';
 
 const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -33,21 +34,42 @@ const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
       }
       setCheckingLocation(false);
     };
+  const uid = auth().currentUser?.uid;
+  let locationWatchId = null;
+  let unsubscribe;
 
-    initApp();
-
-    // 2. Service Manager Listener
-    const uid = auth().currentUser?.uid;
-    let unsubscribe;
-    if (uid) {
-      unsubscribe = ServiceManager.subscribeToServices(uid, (data) => {
-        setServices(data);
-      });
+  const initApp = async () => {
+    const isLocationOn = await checkAndEnableLocation();
+    if (isLocationOn) {
+      setLocationActive(true);
+      console.log("Location active! Starting tracking...");
+    } else {
+      setLocationActive(false);
+      Alert.alert("Location Off", "Please turn your location on.");
     }
+    setCheckingLocation(false);
+  };
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+  initApp();
+
+  if (uid) {
+    console.log('🔑 Mechanic UID:', uid);
+    locationWatchId = ProviderLocationService.startTracking(uid, 'Mechanics');
+    console.log('📍 Watch ID:', locationWatchId);
+  }
+
+  if (uid) {
+    unsubscribe = ServiceManager.subscribeToServices(uid, (data) => {
+      setServices(data);
+    });
+  }
+
+  return () => {
+    if (unsubscribe) unsubscribe();
+    if (locationWatchId !== null) {
+      ProviderLocationService.stopTracking(locationWatchId);
+    }
+  };
   }, []);
 
   const handleEditClick = (item) => {

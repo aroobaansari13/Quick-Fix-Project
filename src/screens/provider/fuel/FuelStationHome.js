@@ -7,6 +7,7 @@ import ProviderOrders from '../ProviderOrders';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
+import { ProviderLocationService } from '../../../services/ProviderLocationService';
 
 const FuelStationHome = ({ navigation, onLogout, initialTab = 'home' }) => { // 🟢 initialTab support handle kar diya
   const [activeTab, setActiveTab] = useState(initialTab); // 🟢 initialTab set kar diya
@@ -38,8 +39,18 @@ const FuelStationHome = ({ navigation, onLogout, initialTab = 'home' }) => { // 
       });
     }
 
+    let locationWatchId = null;
+    if (uid) {
+      locationWatchId = ProviderLocationService.startTracking(uid, 'FuelStations');
+      console.log('📍 Watch ID:', locationWatchId);
+    }
+
     return () => {
       if (unsubscribe) unsubscribe();
+
+      if (locationWatchId !== null) {
+        ProviderLocationService.stopTracking(locationWatchId);
+      }
     };
   }, []);
 

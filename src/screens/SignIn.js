@@ -39,6 +39,12 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack, n
   try {
     // Admin check pehle hi rehne dein jaisa aapka tha
     if (email.trim().toLowerCase() === ADMIN_CREDENTIALS.EMAIL.toLowerCase() && password === ADMIN_CREDENTIALS.PASSWORD) {
+      try {
+          // ✅ Yeh line add karni hai taake Firebase Auth session ban jaye aur rules block na karein
+          await auth().signInWithEmailAndPassword(email.trim().toLowerCase(), password);
+      } catch (authError) {
+          console.log("Admin Firebase Auth Error (Ignore if already signed in):", authError);
+        }
         onAdminLoginSuccess();
         return;
     }

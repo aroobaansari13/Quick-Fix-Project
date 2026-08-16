@@ -131,6 +131,7 @@ const AdminPendingApplications = ({ onBack }) => {
           style: "destructive",
           onPress: async () => {
             try {
+              
               // ✅ Delete straight from the primary database path
               await firestore().collection(collectionName).doc(appId).delete();
               setSelectedApp(null);

@@ -10,7 +10,7 @@ export const ServiceRequestService = {
 
       // Customer ka profile data fetch karna users collection se
       const userDoc = await firestore()
-      .collection('users')
+      .collection('Customers')
       .doc(currentUser.uid)
       .get();
 
@@ -38,6 +38,11 @@ export const ServiceRequestService = {
         "",
         providerName:
         requestData?.provider?.providerName ||
+        "",
+
+        providerType:
+          requestData?.provider?.providerType ||
+          requestData?.provider?.type ||
         "",
       businessName:
       requestData?.provider?.businessName ||
