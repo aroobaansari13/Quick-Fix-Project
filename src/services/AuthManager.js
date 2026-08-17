@@ -13,6 +13,14 @@ export const AuthManager = {
       
       if (docSnapshot.exists()) {
         const data = docSnapshot.data(); 
+
+        if (data?.status === 'disabled' || data?.isBlocked === true || data?.status === 'blocked') {
+          await auth().signOut();
+          const error = new Error("Your account has been disabled by admin");
+          error.code = 'auth/user-disabled'; // Custom error code taaki UI par asani se catch ho
+          throw error;
+        }
+
         if (col === 'Mechanics' || col === 'FuelStations') {
           if (data?.status !== 'approved') {
             await auth().signOut();

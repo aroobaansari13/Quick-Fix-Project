@@ -56,7 +56,14 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack, n
     onSignInSuccess(screenName); 
     
   } catch (error) {
-    Alert.alert("Login Failed", error.message);
+    if (error.code === 'auth/user-disabled') {
+      Alert.alert(
+        "Account Disabled", 
+        "Your account has been disabled by admin. Contact Support."
+      );
+    } else {
+      Alert.alert("Login Failed", error.message);
+    }
   } finally {
     setLoading(false);
   }

@@ -76,7 +76,7 @@ export const ServiceRequestService = {
     return firestore()
       .collection('ServiceRequests')
       .where('providerId', '==', providerId)
-      .where('status', '==', 'pending')
+      .where('status', 'in', ['pending', 'accepted'])
       .onSnapshot(
         snapshot => {
           const requests = snapshot.docs.map(doc => ({
@@ -90,6 +90,18 @@ export const ServiceRequestService = {
           callback([]);
         }
       );
+  },
+
+  async completeRequest(requestId) {
+  try {
+    await firestore().collection('ServiceRequests').doc(requestId).update({
+      status: 'completed',
+      completedAt: firestore.FieldValue.serverTimestamp(),
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
   },
 
   // 3. Request status update karne ke liye (accept / reject)

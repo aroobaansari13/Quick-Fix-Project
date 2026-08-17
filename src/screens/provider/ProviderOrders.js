@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../config/theme';
@@ -163,11 +164,66 @@ const ProviderOrders = ({ onViewDetails }) => {
             showsVerticalScrollIndicator={false}
           >
             {requests.map((item) => (
-            <RequestCard
-              key={item.id}
-              item={item}
-              onViewDetails={onViewDetails}
-            />
+              item.status === 'accepted' ? (
+                // ✅ Accepted request — Completed button wala card
+                <View key={item.id} style={{
+                  backgroundColor: '#fff',
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 12,
+                  elevation: 2,
+                  borderLeftWidth: 4,
+                  borderLeftColor: '#10B981',
+                }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E293B' }}>
+                    {item.customerName || 'Customer'}
+                  </Text>
+                  <Text style={{ color: '#64748B', marginTop: 4 }}>
+                    PKR {item.totalAmount || 0}
+                  </Text>
+                  <Text style={{ color: '#10B981', marginTop: 4, fontSize: 12 }}>
+                    ✅ Request Accepted
+                  </Text>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#1E3A8A',
+                      borderRadius: 8,
+                      padding: 12,
+                      marginTop: 12,
+                      alignItems: 'center',
+                    }}
+                    onPress={async () => {
+                      Alert.alert(
+                        'Complete Service',
+                        'Service complete ho gayi hai?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Yes, Complete',
+                            onPress: async () => {
+                              const result = await ServiceRequestService.completeRequest(item.id);
+                              if (!result.success) {
+                                Alert.alert('Error', result.error);
+                              }
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                      Completed
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                // Pending request — normal card
+                <RequestCard
+                  key={item.id}
+                  item={item}
+                  onViewDetails={onViewDetails}
+                />
+              )
             ))}
           </ScrollView>
 

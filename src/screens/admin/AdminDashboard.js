@@ -3,7 +3,12 @@ import { View, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-nativ
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './AdminDashboard.styles';
 
-const AdminDashboard = ({ onLogout, onPendingApplicationsPress }) => {
+const AdminDashboard = ({ 
+  onLogout, 
+  onPendingApplicationsPress, 
+  onCustomersPress, 
+  onProvidersPress 
+}) => {
   const AdminCard = ({ title, subTitle, icon, iconColor, onPress }) => (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       <View style={[styles.iconWrapper, { backgroundColor: iconColor + '15' }]}>
@@ -16,6 +21,7 @@ const AdminDashboard = ({ onLogout, onPendingApplicationsPress }) => {
       <Icon name="chevron-forward" size={18} color="#94A3B8" />
     </TouchableOpacity>
   );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
@@ -47,7 +53,7 @@ const AdminDashboard = ({ onLogout, onPendingApplicationsPress }) => {
           subTitle="View registered customers"
           icon="people-outline"
           iconColor="#3B82F6" // Blue
-          onPress={() => console.log("Customers List Clicked")}
+          onPress={onCustomersPress}
         />
 
         {/* 4. Manage Feedbacks */}
@@ -65,7 +71,7 @@ const AdminDashboard = ({ onLogout, onPendingApplicationsPress }) => {
           subTitle="Mechanics & Fuel Stations logs"
           icon="construct-outline"
           iconColor="#10B981" // Green
-          onPress={() => console.log("Providers List Clicked")}
+          onPress={onProvidersPress}
         />
       </ScrollView>
     </View>

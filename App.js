@@ -18,6 +18,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore'; 
 import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
+import AdminCustomerList from './src/screens/admin/AdminCustomerList';
+import AdminCustomerDetail from './src/screens/admin/AdminCustomerDetail';
+import AdminProviderList from './src/screens/admin/AdminProviderList';
+import AdminProviderDetail from './src/screens/admin/AdminProviderDetail';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ServiceDetails from './src/screens/customer/ServiceDetails';
 import CheckoutScreen from './src/screens/customer/CheckoutScreen';
@@ -30,6 +34,8 @@ const App = () => {
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
   const [selectedService, setSelectedService] = useState(null);
   const [checkoutData, setCheckoutData] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedProvider, setSelectedProvider] = useState(null);
 
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged((user) => {
@@ -152,12 +158,48 @@ const App = () => {
 
       {currentScreen === 'adminDashboard' && (
         <AdminDashboard 
+          onLogout={() => setCurrentScreen('signIn')}
           onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
+          onCustomersPress={() => setCurrentScreen('adminCustomerList')}
+          onProvidersPress={() => setCurrentScreen('adminProviderList')}
         />
       )}
       {currentScreen === 'pendingAppsList' && (
         <AdminPendingApplications 
           onBack={() => setCurrentScreen('adminDashboard')} 
+        />
+      )}
+      {currentScreen === 'adminCustomerList' && (
+        <AdminCustomerList 
+          onBack={() => setCurrentScreen('adminDashboard')}
+          onSelectCustomer={(customer) => {
+          setSelectedCustomer(customer);
+          setCurrentScreen('adminCustomerDetail');
+          }}
+        />
+      )}
+
+      {currentScreen === 'adminCustomerDetail' && (
+        <AdminCustomerDetail 
+          customer={selectedCustomer}
+          onBack={() => setCurrentScreen('adminCustomerList')}
+        />
+      )}
+
+      {currentScreen === 'adminProviderList' && (
+        <AdminProviderList 
+          onBack={() => setCurrentScreen('adminDashboard')}
+          onSelectProvider={(provider) => {
+          setSelectedProvider(provider);
+          setCurrentScreen('adminProviderDetail');
+          }}
+        />
+      )}
+
+      {currentScreen === 'adminProviderDetail' && (
+        <AdminProviderDetail 
+          provider={selectedProvider}
+          onBack={() => setCurrentScreen('adminProviderList')}
         />
       )}
 
