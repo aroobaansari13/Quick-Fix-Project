@@ -16,116 +16,101 @@ import { styles } from './AvailabilityScreen.styles';
 const AvailabilityScreen = ({ navigation }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userCollection, setUserCollection] = useState(null);
-  const [targetDocId, setTargetDocId] = useState(null);
 
   const currentUser = auth().currentUser;
   const uid = currentUser?.uid;
-  const userEmail = currentUser?.email;
 
   useEffect(() => {
-    if (!uid && !userEmail) { 
+    if (!uid) { 
       setLoading(false); 
       return; 
     }
 
-    const findProfileDoc = async () => {
+    const fetchCurrentStatus = async () => {
       try {
-        // 1. Check FuelStations by UID
-        if (uid) {
-          const fuelDoc = await firestore().collection('FuelStations').doc(uid).get();
-          if (fuelDoc.exists) {
-            setUserCollection('FuelStations');
-            setTargetDocId(uid);
-            setIsOnline(fuelDoc.data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
+        // First priority: Check Mechanics collection
+        const mechDoc = await firestore().collection('Mechanics').doc(uid).get();
+        if (mechDoc.exists && mechDoc.data()?.isOnline !== undefined) {
+          setIsOnline(mechDoc.data()?.isOnline);
+          setLoading(false);
+          return;
         }
 
-        // 2. Check Mechanics by UID
-        if (uid) {
-          const mechDoc = await firestore().collection('Mechanics').doc(uid).get();
-          if (mechDoc.exists) {
-            setUserCollection('Mechanics');
-            setTargetDocId(uid);
-            setIsOnline(mechDoc.data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
+        // Second priority: Check FuelStations collection
+        const fuelDoc = await firestore().collection('FuelStations').doc(uid).get();
+        if (fuelDoc.exists && fuelDoc.data()?.isOnline !== undefined) {
+          setIsOnline(fuelDoc.data()?.isOnline);
+          setLoading(false);
+          return;
         }
 
-        // 3. Check FuelStations by Email
-        if (userEmail) {
-          const fuelByEmail = await firestore()
-            .collection('FuelStations')
-            .where('email', '==', userEmail)
-            .get();
-
-          if (!fuelByEmail.empty) {
-            const foundId = fuelByEmail.docs[0].id;
-            setUserCollection('FuelStations');
-            setTargetDocId(foundId);
-            setIsOnline(fuelByEmail.docs[0].data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
-
-          // 4. Check Mechanics by Email
-          const mechByEmail = await firestore()
-            .collection('Mechanics')
-            .where('email', '==', userEmail)
-            .get();
-
-          if (!mechByEmail.empty) {
-            const foundId = mechByEmail.docs[0].id;
-            setUserCollection('Mechanics');
-            setTargetDocId(foundId);
-            setIsOnline(mechByEmail.docs[0].data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
+        // Fallback: Check users collection
+        const userDoc = await firestore().collection('users').doc(uid).get();
+        if (userDoc.exists) {
+          setIsOnline(userDoc.data()?.isOnline ?? false);
         }
       } catch (error) {
-        console.log('Error finding profile:', error);
+        console.log('Error fetching status:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    findProfileDoc();
-  }, [uid, userEmail]);
+    fetchCurrentStatus();
+  }, [uid]);
 
   const toggleOnlineStatus = async (value) => {
-    if (!userCollection || !targetDocId) {
-      Alert.alert("Error", "Unable to update status. Profile not synced.");
+    if (!uid) {
+      Alert.alert("Error", "Unable to update status. User not logged in.");
       return;
     }
 
+    // Immediately change UI state
     setIsOnline(value);
 
     try {
-      const updateData = {
+      const statusPayload = {
         isOnline: value,
         isAvailable: value,
         availabilityStatus: value ? 'online' : 'offline',
         updatedAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      if (userCollection === 'FuelStations') {
-        updateData['stationDetails.isOnline'] = value;
-      } else {
-        updateData['shopDetails.isOnline'] = value;
+      // 1. Force update 'Mechanics' collection if document exists
+      const mechRef = firestore().collection('Mechanics').doc(uid);
+      const mechDoc = await mechRef.get();
+      if (mechDoc.exists) {
+        await mechRef.set({
+          ...statusPayload,
+          shopDetails: {
+            ...(mechDoc.data()?.shopDetails || {}),
+            isOnline: value,
+            isAvailable: value,
+          }
+        }, { merge: true });
       }
 
-      // Merge: true hone ki waja se agar isOnline ki field pehle nahi thi, toh nayi create ho jayegi
-      await firestore()
-        .collection(userCollection)
-        .doc(targetDocId)
-        .set(updateData, { merge: true });
+      // 2. Force update 'FuelStations' collection if document exists
+      const fuelRef = firestore().collection('FuelStations').doc(uid);
+      const fuelDoc = await fuelRef.get();
+      if (fuelDoc.exists) {
+        await fuelRef.set({
+          ...statusPayload,
+          stationDetails: {
+            ...(fuelDoc.data()?.stationDetails || {}),
+            isOnline: value,
+            isAvailable: value,
+          }
+        }, { merge: true });
+      }
+
+      // 3. Always mirror update in 'users' collection
+      await firestore().collection('users').doc(uid).set(statusPayload, { merge: true });
+
+      console.log(`Successfully updated status to ${value} for UID: ${uid}`);
 
     } catch (error) {
-      console.log('Update Error:', error);
+      console.log('Status Update Error:', error);
       Alert.alert('Error', 'Failed to update availability status.');
       setIsOnline(!value);
     }

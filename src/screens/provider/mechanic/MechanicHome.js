@@ -21,19 +21,7 @@ const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
   const [checkingLocation, setCheckingLocation] = useState(true);
 
   useEffect(() => {
-    // Logic to handle Location and Services in one go
-    const initApp = async () => {
-      // 1. Location Logic
-      const isLocationOn = await checkAndEnableLocation();
-      if (isLocationOn) {
-        setLocationActive(true);
-        console.log("Location active! Loading app data...");
-      } else {
-        setLocationActive(false);
-        Alert.alert("Location Off", "Please turn your location on.");
-      }
-      setCheckingLocation(false);
-    };
+    
   const uid = auth().currentUser?.uid;
   let locationWatchId = null;
   let unsubscribe;
