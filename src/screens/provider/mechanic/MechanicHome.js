@@ -21,43 +21,42 @@ const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
   const [checkingLocation, setCheckingLocation] = useState(true);
 
   useEffect(() => {
-    
-  const uid = auth().currentUser?.uid;
-  let locationWatchId = null;
-  let unsubscribe;
+    const uid = auth().currentUser?.uid;
+    let locationWatchId = null;
+    let unsubscribe;
 
-  const initApp = async () => {
-    const isLocationOn = await checkAndEnableLocation();
-    if (isLocationOn) {
-      setLocationActive(true);
-      console.log("Location active! Starting tracking...");
-    } else {
-      setLocationActive(false);
-      Alert.alert("Location Off", "Please turn your location on.");
+    const initApp = async () => {
+      const isLocationOn = await checkAndEnableLocation();
+      if (isLocationOn) {
+        setLocationActive(true);
+        console.log("Location active! Starting tracking...");
+      } else {
+        setLocationActive(false);
+        Alert.alert("Location Off", "Please turn your location on.");
+      }
+      setCheckingLocation(false);
+    };
+
+    initApp();
+
+    if (uid) {
+      console.log('🔑 Mechanic UID:', uid);
+      locationWatchId = ProviderLocationService.startTracking(uid, 'Mechanics');
+      console.log('📍 Watch ID:', locationWatchId);
     }
-    setCheckingLocation(false);
-  };
 
-  initApp();
-
-  if (uid) {
-    console.log('🔑 Mechanic UID:', uid);
-    locationWatchId = ProviderLocationService.startTracking(uid, 'Mechanics');
-    console.log('📍 Watch ID:', locationWatchId);
-  }
-
-  if (uid) {
-    unsubscribe = ServiceManager.subscribeToServices(uid, (data) => {
-      setServices(data);
-    });
-  }
-
-  return () => {
-    if (unsubscribe) unsubscribe();
-    if (locationWatchId !== null) {
-      ProviderLocationService.stopTracking(locationWatchId);
+    if (uid) {
+      unsubscribe = ServiceManager.subscribeToServices(uid, (data) => {
+        setServices(data);
+      });
     }
-  };
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      if (locationWatchId !== null) {
+        ProviderLocationService.stopTracking(locationWatchId);
+      }
+    };
   }, []);
 
   const handleEditClick = (item) => {
@@ -112,7 +111,7 @@ const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
       case 'orders':
         return <ProviderOrders />;
       
-      // 🟢 ProviderProfile wrapping + Flexible Availability & Settings Screen handler
+      // 🟢 Updated navigation handler for TermsAndPolicies & Availability
       case 'profile':
         return (
           <ProviderProfile 
@@ -122,6 +121,8 @@ const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
                 const lowerScreen = screen?.toLowerCase() || '';
                 if (lowerScreen.includes('availability') || lowerScreen.includes('setting')) {
                   navigation?.navigate('AvailabilityScreen', { providerType: 'mechanic', ...params });
+                } else if (lowerScreen.includes('terms') || lowerScreen.includes('policy')) {
+                  navigation?.navigate('TermsAndPolicies', { providerType: 'mechanic', ...params });
                 } else if (navigation?.navigate) {
                   navigation.navigate(screen, params);
                 }

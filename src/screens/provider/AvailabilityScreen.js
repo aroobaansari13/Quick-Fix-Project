@@ -13,12 +13,15 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { styles } from './AvailabilityScreen.styles';
 
-const AvailabilityScreen = ({ navigation }) => {
+const AvailabilityScreen = ({ navigation, route }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const currentUser = auth().currentUser;
   const uid = currentUser?.uid;
+
+  // App.js se aane wala providerType ('mechanic' ya 'fuel_station')
+  const providerType = route?.params?.providerType || 'mechanic';
 
   useEffect(() => {
     if (!uid) { 
@@ -28,7 +31,7 @@ const AvailabilityScreen = ({ navigation }) => {
 
     const fetchCurrentStatus = async () => {
       try {
-        // First priority: Check Mechanics collection
+        // Priority 1: Check Mechanics collection
         const mechDoc = await firestore().collection('Mechanics').doc(uid).get();
         if (mechDoc.exists && mechDoc.data()?.isOnline !== undefined) {
           setIsOnline(mechDoc.data()?.isOnline);
@@ -36,7 +39,7 @@ const AvailabilityScreen = ({ navigation }) => {
           return;
         }
 
-        // Second priority: Check FuelStations collection
+        // Priority 2: Check FuelStations collection
         const fuelDoc = await firestore().collection('FuelStations').doc(uid).get();
         if (fuelDoc.exists && fuelDoc.data()?.isOnline !== undefined) {
           setIsOnline(fuelDoc.data()?.isOnline);
@@ -44,7 +47,7 @@ const AvailabilityScreen = ({ navigation }) => {
           return;
         }
 
-        // Fallback: Check users collection
+        // Priority 3: Fallback to users collection
         const userDoc = await firestore().collection('users').doc(uid).get();
         if (userDoc.exists) {
           setIsOnline(userDoc.data()?.isOnline ?? false);
@@ -65,7 +68,7 @@ const AvailabilityScreen = ({ navigation }) => {
       return;
     }
 
-    // Immediately change UI state
+    // Update UI immediately
     setIsOnline(value);
 
     try {
@@ -76,35 +79,21 @@ const AvailabilityScreen = ({ navigation }) => {
         updatedAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      // 1. Force update 'Mechanics' collection if document exists
-      const mechRef = firestore().collection('Mechanics').doc(uid);
-      const mechDoc = await mechRef.get();
-      if (mechDoc.exists) {
-        await mechRef.set({
-          ...statusPayload,
-          shopDetails: {
-            ...(mechDoc.data()?.shopDetails || {}),
-            isOnline: value,
-            isAvailable: value,
-          }
-        }, { merge: true });
-      }
+      // 🟢 Target exact collection based on providerType or update existing doc with UID
+      const collectionName = (providerType === 'fuel_station' || providerType === 'fuel') 
+        ? 'FuelStations' 
+        : 'Mechanics';
 
-      // 2. Force update 'FuelStations' collection if document exists
-      const fuelRef = firestore().collection('FuelStations').doc(uid);
-      const fuelDoc = await fuelRef.get();
-      if (fuelDoc.exists) {
-        await fuelRef.set({
-          ...statusPayload,
-          stationDetails: {
-            ...(fuelDoc.data()?.stationDetails || {}),
-            isOnline: value,
-            isAvailable: value,
-          }
-        }, { merge: true });
-      }
+      // 1. Direct update on exact Document UID (NO .add() used, NO duplicate document possible)
+      await firestore().collection(collectionName).doc(uid).set({
+        ...statusPayload,
+        ...(collectionName === 'Mechanics' 
+          ? { 'shopDetails.isOnline': value, 'shopDetails.isAvailable': value }
+          : { 'stationDetails.isOnline': value, 'stationDetails.isAvailable': value }
+        )
+      }, { merge: true });
 
-      // 3. Always mirror update in 'users' collection
+      // 2. Always mirror update in 'users' collection using UID
       await firestore().collection('users').doc(uid).set(statusPayload, { merge: true });
 
       console.log(`Successfully updated status to ${value} for UID: ${uid}`);

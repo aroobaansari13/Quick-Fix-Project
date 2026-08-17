@@ -22,7 +22,6 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ServiceDetails from './src/screens/customer/ServiceDetails';
 import CheckoutScreen from './src/screens/customer/CheckoutScreen';
 import BusinessDetails from './src/screens/provider/BusinessDetails';
-// 🟢 1. Import AvailabilityScreen
 import AvailabilityScreen from './src/screens/provider/AvailabilityScreen';
 
 const App = () => {
@@ -31,7 +30,7 @@ const App = () => {
   const [currentScreen, setCurrentScreen] = useState('selection');
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/150');
   const [customerActiveTab, setCustomerActiveTab] = useState('home');
-  const [providerActiveTab, setProviderActiveTab] = useState('home'); // 🟢 Provider Tab state
+  const [providerActiveTab, setProviderActiveTab] = useState('home');
   const [selectedService, setSelectedService] = useState(null);
   const [checkoutData, setCheckoutData] = useState(null);
   
@@ -134,9 +133,11 @@ const App = () => {
                 setBusinessProviderType(params?.providerType || 'mechanic');
                 setCurrentScreen('businessDetails');
               } else if (screen === 'AvailabilityScreen') {
-                // 🟢 Navigation link for AvailabilityScreen
                 setBusinessProviderType(params?.providerType || 'mechanic');
                 setCurrentScreen('availabilityScreen');
+              } else if (screen === 'TermsAndPolicies' || screen === 'termsAndPolicies') {
+                setBusinessProviderType(params?.providerType || 'mechanic');
+                setCurrentScreen('termsAndPolicies');
               }
             }
           }}
@@ -168,9 +169,11 @@ const App = () => {
                 setBusinessProviderType(params?.providerType || 'fuel_station');
                 setCurrentScreen('businessDetails');
               } else if (screen === 'AvailabilityScreen') {
-                // 🟢 Navigation link for AvailabilityScreen
                 setBusinessProviderType(params?.providerType || 'fuel_station');
                 setCurrentScreen('availabilityScreen');
+              } else if (screen === 'TermsAndPolicies' || screen === 'termsAndPolicies') {
+                setBusinessProviderType(params?.providerType || 'fuel_station');
+                setCurrentScreen('termsAndPolicies');
               }
             }
           }}
@@ -210,7 +213,10 @@ const App = () => {
             setProfileImage(newImage); 
           }}
           onManageProfilePress={() => setCurrentScreen('manageProfile')}
-          onTermsAndPoliciesPress={() => setCurrentScreen('termsAndPolicies')} 
+          onTermsAndPoliciesPress={() => {
+            setBusinessProviderType('customer');
+            setCurrentScreen('termsAndPolicies');
+          }} 
           onServiceSelect={(item) => {
             setSelectedService(item); 
             setCurrentScreen('serviceDetails'); 
@@ -247,18 +253,28 @@ const App = () => {
         />
       )}
 
+      {/* 🟢 State-Based Terms & Policies Block */}
       {currentScreen === 'termsAndPolicies' && (
         <TermsAndPolicies 
+          route={{ params: { providerType: businessProviderType } }}
           navigation={{
             goBack: () => {
-              setCustomerActiveTab('profile'); 
-              setCurrentScreen('customerHome');
+              if (businessProviderType === 'mechanic') {
+                setProviderActiveTab('profile');
+                setCurrentScreen('mechanicHome');
+              } else if (businessProviderType === 'fuel_station' || businessProviderType === 'fuel') {
+                setProviderActiveTab('profile');
+                setCurrentScreen('fuelStationHome');
+              } else {
+                setCustomerActiveTab('profile');
+                setCurrentScreen('customerHome');
+              }
             }
           }} 
         />
       )}
 
-      {/* 🟢 Business Details Block */}
+      {/* Business Details Block */}
       {currentScreen === 'businessDetails' && (
         <BusinessDetails 
           route={{ params: { providerType: businessProviderType } }}
@@ -271,7 +287,7 @@ const App = () => {
         />
       )}
 
-      {/* 🟢 2. Availability Screen Block - Route prop added here */}
+      {/* Availability Screen Block */}
       {currentScreen === 'availabilityScreen' && (
         <AvailabilityScreen 
           route={{ params: { providerType: businessProviderType } }}

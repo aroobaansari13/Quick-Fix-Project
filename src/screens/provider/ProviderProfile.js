@@ -219,7 +219,7 @@ const ProviderProfile = ({ navigation, onLogout, providerType = 'mechanic' }) =>
             <Icon name="chevron-forward" size={18} color="#CBD5E1" />
           </TouchableOpacity>
 
-          {/* 🟢 Settings & Availability (Role isolated + Back navigation fixed to profile) */}
+          {/* 🟢 Settings & Availability */}
           <TouchableOpacity 
             style={styles.menuItem} 
             activeOpacity={0.6}
@@ -239,7 +239,19 @@ const ProviderProfile = ({ navigation, onLogout, providerType = 'mechanic' }) =>
             <Icon name="chevron-forward" size={18} color="#CBD5E1" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.6}>
+          {/* 🟢 Terms & Policies - Added onPress navigation handler */}
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.6}
+            onPress={() => {
+              if (navigation && navigation.navigate) {
+                navigation.navigate('TermsAndPolicies', { 
+                  providerType: formattedRole,
+                  initialTab: 'profile'
+                });
+              }
+            }}
+          >
             <View style={styles.menuItemLeft}>
               <Icon name="document-text-outline" size={22} color="#1E3A8A" />
               <Text style={[styles.menuItemText, { color: '#1E293B' }]}>Terms & Policies</Text>

@@ -102,7 +102,7 @@ const FuelStationHome = ({ navigation, onLogout, initialTab = 'home' }) => { // 
     switch (activeTab) {
       case 'orders': return <ProviderOrders />;
       
-      // 🟢 ProviderProfile wrapping + Flexible Availability & Settings Screen handler
+      // 🟢 ProviderProfile wrapping + Flexible Availability, Settings & Terms Screen handler
       case 'profile': 
         return (
           <ProviderProfile 
@@ -112,6 +112,8 @@ const FuelStationHome = ({ navigation, onLogout, initialTab = 'home' }) => { // 
                 const lowerScreen = screen?.toLowerCase() || '';
                 if (lowerScreen.includes('availability') || lowerScreen.includes('setting')) {
                   navigation?.navigate('AvailabilityScreen', { providerType: 'fuel_station', ...params });
+                } else if (lowerScreen.includes('terms') || lowerScreen.includes('policy')) {
+                  navigation?.navigate('TermsAndPolicies', { providerType: 'fuel_station', ...params });
                 } else if (navigation?.navigate) {
                   navigation.navigate(screen, params);
                 }
