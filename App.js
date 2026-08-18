@@ -26,6 +26,8 @@ import AdminFeedbacks from './src/screens/admin/AdminFeedbacks';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ServiceDetails from './src/screens/customer/ServiceDetails';
 import CheckoutScreen from './src/screens/customer/CheckoutScreen';
+import { FCMService } from './src/services/FCMService';
+import messaging from '@react-native-firebase/messaging';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -38,16 +40,25 @@ const App = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedProvider, setSelectedProvider] = useState(null);
 
+  // App component se bahar — top level par
+  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+   console.log('Background message:', remoteMessage);
+  });
+
   useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged((user) => {
+    const unsubscribe = auth().onAuthStateChanged(async (user) => {
       if (isShowSplash) return;
       if (!user) {
         setCurrentScreen('selection');
+      }
+      else {
+        await FCMService.initializeFCM();
       }
       setIsSessionChecking(false);
     });
     return () => unsubscribe();
   }, [isShowSplash]);
+  
   if (isShowSplash) {
     return <SplashScreen onFinish={() => setIsShowSplash(false)} />;
   }
