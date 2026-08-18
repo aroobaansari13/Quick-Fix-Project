@@ -4,77 +4,86 @@ import { calculateDistance } from '../utils/distanceHelper';
 
 export const searchNearbyServices = async (searchQuery, customerLat, customerLon) => {
   try {
-    const servicesSnapshot = await firestore()
-      .collection('ProviderServices')
-      .where('title', '>=', searchQuery)
-      .where('title', '<=', searchQuery + '\uf8ff')
-      .get();
+    // 1. Fetch all provider services from Firestore
+    const servicesSnapshot = await firestore().collection('ProviderServices').get();
 
+    const formattedQuery = searchQuery ? searchQuery.trim().toLowerCase() : '';
     const results = [];
 
     for (const doc of servicesSnapshot.docs) {
       const serviceData = doc.data();
-      const { providerId, providerRole } = serviceData;
+      const { providerId, providerRole, title } = serviceData;
 
-      // 1. Provider Profile fetch
-      const collectionName = providerRole === 'fuel_station' ? 'FuelStations' : 'Mechanics';
-      const providerDoc = await firestore().collection(collectionName).doc(providerId).get();
+      if (!providerId) continue;
+
+      // 🔍 Flexible Case-Insensitive Search Match (e.g., "tyre" matches "Tyre repair")
+      if (formattedQuery !== '') {
+        const serviceTitle = (title || '').toLowerCase();
+        const serviceCategory = (serviceData.category || '').toLowerCase();
+        
+        const isMatch = serviceTitle.includes(formattedQuery) || serviceCategory.includes(formattedQuery);
+        if (!isMatch) continue;
+      }
+
+      // 2. Correct Role Check ('fuelStation' & 'fuel_station' support)
+      const isFuel = providerRole === 'fuelStation' || providerRole === 'fuel_station';
+      const collectionName = isFuel ? 'FuelStations' : 'Mechanics';
+
+      // First check in specific collection, then fallback to 'users' collection
+      let providerDoc = await firestore().collection(collectionName).doc(providerId).get();
+      
+      if (!providerDoc.exists) {
+        providerDoc = await firestore().collection('users').doc(providerId).get();
+      }
 
       if (providerDoc.exists) {
         const pData = providerDoc.data();
         
-        const details = providerRole === 'fuel_station' ? pData.stationDetails : pData.shopDetails;
+        const details = isFuel 
+          ? (pData.stationDetails || pData) 
+          : (pData.shopDetails || pData);
 
-        // 🟢 AVAILABILITY FILTER: Agar provider offline hai toh skip karein
-        const isOffline = 
-          pData.isOnline === false || 
-          pData.isAvailable === false || 
-          pData.availabilityStatus === false || 
-          pData.availabilityStatus === 'offline' ||
-          pData.status === 'offline' ||
-          details?.isOnline === false ||
-          details?.isAvailable === false ||
-          details?.availabilityStatus === false ||
-          details?.availabilityStatus === 'offline';
+        // 🟢 FIXED SAFE AVAILABILITY FILTER
+        // Agar top-level par isOnline true hai, toh usay Online hi mana jaye
+        const isOnline = pData.isOnline === true || (pData.isOnline !== false && details?.isOnline === true);
+        const isAvailable = pData.isAvailable !== false && pData.availabilityStatus !== 'offline';
 
-        if (isOffline) {
+        if (!isOnline || !isAvailable) {
           console.log(`Skipping provider ${providerId} as they are offline.`);
-          continue; // Offline provider ko result mein add nahi karega
+          continue; 
         }
 
-        // 2. Safely access location data
-        if (details && typeof details.latitude !== 'undefined' && typeof details.longitude !== 'undefined') {
-          const lat = parseFloat(details.latitude);
-          const lng = parseFloat(details.longitude);
+        // 3. Safely access location data
+        const lat = parseFloat(details?.latitude || pData?.latitude);
+        const lng = parseFloat(details?.longitude || pData?.longitude);
 
-          console.log("Customer:", customerLat, customerLon);
-          console.log("Provider:", lat, lng);
-          console.log("Distance:", calculateDistance(customerLat, customerLon, lat, lng));
-          
+        if (!isNaN(lat) && !isNaN(lng) && customerLat && customerLon) {
           const dist = calculateDistance(customerLat, customerLon, lat, lng);
 
+          // Distance threshold (7 KM)
           if (dist <= 7) {
             results.push({
+              id: doc.id,
               ...serviceData,
               providerName: pData.name || "Unknown",
-              businessName: details.shopName || details.stationName || "No Business Name",
-              address: details.address || "No Address",
+              businessName: details?.shopName || details?.stationName || pData.businessName || "No Business Name",
+              address: details?.address || pData.address || "No Address",
               distance: dist.toFixed(1),
-              providerType: providerRole, // ✅ Yeh add karo
+              providerType: providerRole,
               providerId: providerId,     
             });
           }
         } else {
-          console.warn(`Provider ${providerId} missing location fields.`);
+          console.warn(`Provider ${providerId} missing valid location coordinates.`);
         }
       }
     }
+
     return results;
+
   } catch (error) {
     console.log("============== SEARCH ERROR ==============");
     console.log(error);
-    console.log(error.code);
-    console.log(error.message);
     console.log("=========================================");
     throw error;
   }

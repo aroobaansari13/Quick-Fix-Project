@@ -4,15 +4,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import { styles } from '../mechanic/MechanicHome.styles';
 import ProviderOrders from '../ProviderOrders';
-import ProviderRequestDetails from '../ProviderRequestDetails';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 import { ProviderLocationService } from '../../../services/ProviderLocationService';
 
-const MechanicHome = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedRequest, setSelectedRequest] = useState(null);
+const MechanicHome = ({ navigation, onLogout, initialTab = 'home' }) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]); 
   const [serviceName, setServiceName] = useState('');
@@ -23,42 +21,42 @@ const MechanicHome = () => {
   const [checkingLocation, setCheckingLocation] = useState(true);
 
   useEffect(() => {
-  const uid = auth().currentUser?.uid;
-  let locationWatchId = null;
-  let unsubscribe;
+    const uid = auth().currentUser?.uid;
+    let locationWatchId = null;
+    let unsubscribe;
 
-  const initApp = async () => {
-    const isLocationOn = await checkAndEnableLocation();
-    if (isLocationOn) {
-      setLocationActive(true);
-      console.log("Location active! Starting tracking...");
-    } else {
-      setLocationActive(false);
-      Alert.alert("Location Off", "Please turn your location on.");
+    const initApp = async () => {
+      const isLocationOn = await checkAndEnableLocation();
+      if (isLocationOn) {
+        setLocationActive(true);
+        console.log("Location active! Starting tracking...");
+      } else {
+        setLocationActive(false);
+        Alert.alert("Location Off", "Please turn your location on.");
+      }
+      setCheckingLocation(false);
+    };
+
+    initApp();
+
+    if (uid) {
+      console.log('🔑 Mechanic UID:', uid);
+      locationWatchId = ProviderLocationService.startTracking(uid, 'Mechanics');
+      console.log('📍 Watch ID:', locationWatchId);
     }
-    setCheckingLocation(false);
-  };
 
-  initApp();
-
-  if (uid) {
-    console.log('🔑 Mechanic UID:', uid);
-    locationWatchId = ProviderLocationService.startTracking(uid, 'Mechanics');
-    console.log('📍 Watch ID:', locationWatchId);
-  }
-
-  if (uid) {
-    unsubscribe = ServiceManager.subscribeToServices(uid, (data) => {
-      setServices(data);
-    });
-  }
-
-  return () => {
-    if (unsubscribe) unsubscribe();
-    if (locationWatchId !== null) {
-      ProviderLocationService.stopTracking(locationWatchId);
+    if (uid) {
+      unsubscribe = ServiceManager.subscribeToServices(uid, (data) => {
+        setServices(data);
+      });
     }
-  };
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      if (locationWatchId !== null) {
+        ProviderLocationService.stopTracking(locationWatchId);
+      }
+    };
   }, []);
 
   const handleEditClick = (item) => {
@@ -111,27 +109,30 @@ const MechanicHome = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'orders':
-      return (
-        <ProviderOrders
-          onViewDetails={(request) => {
-            console.log('Opening Request Details:', request);
-              setSelectedRequest(request);
-          setActiveTab('requestDetails');
-          }}
-        />
-      );
-      case 'requestDetails':
+        return <ProviderOrders />;
+      
+      // 🟢 Updated navigation handler for TermsAndPolicies & Availability
+      case 'profile':
         return (
-          <ProviderRequestDetails
-            request={selectedRequest}
-            onBack={() => {
-              setSelectedRequest(null);
-              setActiveTab('orders');
+          <ProviderProfile 
+            navigation={{
+              ...navigation,
+              navigate: (screen, params) => {
+                const lowerScreen = screen?.toLowerCase() || '';
+                if (lowerScreen.includes('availability') || lowerScreen.includes('setting')) {
+                  navigation?.navigate('AvailabilityScreen', { providerType: 'mechanic', ...params });
+                } else if (lowerScreen.includes('terms') || lowerScreen.includes('policy')) {
+                  navigation?.navigate('TermsAndPolicies', { providerType: 'mechanic', ...params });
+                } else if (navigation?.navigate) {
+                  navigation.navigate(screen, params);
+                }
+              }
             }}
+            providerType="mechanic" 
+            onLogout={onLogout || (() => auth().signOut())} 
           />
         );
-      case 'profile':
-        return <ProviderProfile onLogout={() => auth().signOut()} />;
+        
       case 'home':
       default:
         return (
@@ -235,9 +236,18 @@ const MechanicHome = () => {
       </Modal>
 
       <View style={styles.bottomTab}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}><Icon name={activeTab === 'home' ? 'home' : 'home-outline'} size={26} color={activeTab === 'home' ? '#1E3A8A' : '#94A3B8'} /><Text>Home</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}><Icon name={activeTab === 'orders' ? 'clipboard' : 'clipboard-outline'} size={26} color={activeTab === 'orders' ? '#1E3A8A' : '#94A3B8'} /><Text>Orders</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}><Icon name={activeTab === 'profile' ? 'person' : 'person-outline'} size={26} color={activeTab === 'profile' ? '#1E3A8A' : '#94A3B8'} /><Text>Profile</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}>
+          <Icon name={activeTab === 'home' ? 'home' : 'home-outline'} size={26} color={activeTab === 'home' ? '#1E3A8A' : '#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab === 'home' ? '#1E3A8A' : '#94A3B8', fontWeight: '500' }}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}>
+          <Icon name={activeTab === 'orders' ? 'clipboard' : 'clipboard-outline'} size={26} color={activeTab === 'orders' ? '#1E3A8A' : '#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab === 'orders' ? '#1E3A8A' : '#94A3B8', fontWeight: '500' }}>Orders</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}>
+          <Icon name={activeTab === 'profile' ? 'person' : 'person-outline'} size={26} color={activeTab === 'profile' ? '#1E3A8A' : '#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab === 'profile' ? '#1E3A8A' : '#94A3B8', fontWeight: '500' }}>Profile</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

@@ -13,119 +13,93 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { styles } from './AvailabilityScreen.styles';
 
-const AvailabilityScreen = ({ navigation }) => {
+const AvailabilityScreen = ({ navigation, route }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userCollection, setUserCollection] = useState(null);
-  const [targetDocId, setTargetDocId] = useState(null);
 
   const currentUser = auth().currentUser;
   const uid = currentUser?.uid;
-  const userEmail = currentUser?.email;
+
+  // App.js se aane wala providerType ('mechanic' ya 'fuel_station')
+  const providerType = route?.params?.providerType || 'mechanic';
 
   useEffect(() => {
-    if (!uid && !userEmail) { 
+    if (!uid) { 
       setLoading(false); 
       return; 
     }
 
-    const findProfileDoc = async () => {
+    const fetchCurrentStatus = async () => {
       try {
-        // 1. Check FuelStations by UID
-        if (uid) {
-          const fuelDoc = await firestore().collection('FuelStations').doc(uid).get();
-          if (fuelDoc.exists) {
-            setUserCollection('FuelStations');
-            setTargetDocId(uid);
-            setIsOnline(fuelDoc.data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
+        // Priority 1: Check Mechanics collection
+        const mechDoc = await firestore().collection('Mechanics').doc(uid).get();
+        if (mechDoc.exists && mechDoc.data()?.isOnline !== undefined) {
+          setIsOnline(mechDoc.data()?.isOnline);
+          setLoading(false);
+          return;
         }
 
-        // 2. Check Mechanics by UID
-        if (uid) {
-          const mechDoc = await firestore().collection('Mechanics').doc(uid).get();
-          if (mechDoc.exists) {
-            setUserCollection('Mechanics');
-            setTargetDocId(uid);
-            setIsOnline(mechDoc.data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
+        // Priority 2: Check FuelStations collection
+        const fuelDoc = await firestore().collection('FuelStations').doc(uid).get();
+        if (fuelDoc.exists && fuelDoc.data()?.isOnline !== undefined) {
+          setIsOnline(fuelDoc.data()?.isOnline);
+          setLoading(false);
+          return;
         }
 
-        // 3. Check FuelStations by Email
-        if (userEmail) {
-          const fuelByEmail = await firestore()
-            .collection('FuelStations')
-            .where('email', '==', userEmail)
-            .get();
-
-          if (!fuelByEmail.empty) {
-            const foundId = fuelByEmail.docs[0].id;
-            setUserCollection('FuelStations');
-            setTargetDocId(foundId);
-            setIsOnline(fuelByEmail.docs[0].data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
-
-          // 4. Check Mechanics by Email
-          const mechByEmail = await firestore()
-            .collection('Mechanics')
-            .where('email', '==', userEmail)
-            .get();
-
-          if (!mechByEmail.empty) {
-            const foundId = mechByEmail.docs[0].id;
-            setUserCollection('Mechanics');
-            setTargetDocId(foundId);
-            setIsOnline(mechByEmail.docs[0].data()?.isOnline ?? false);
-            setLoading(false);
-            return;
-          }
+        // Priority 3: Fallback to users collection
+        const userDoc = await firestore().collection('users').doc(uid).get();
+        if (userDoc.exists) {
+          setIsOnline(userDoc.data()?.isOnline ?? false);
         }
       } catch (error) {
-        console.log('Error finding profile:', error);
+        console.log('Error fetching status:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    findProfileDoc();
-  }, [uid, userEmail]);
+    fetchCurrentStatus();
+  }, [uid]);
 
   const toggleOnlineStatus = async (value) => {
-    if (!userCollection || !targetDocId) {
-      Alert.alert("Error", "Unable to update status. Profile not synced.");
+    if (!uid) {
+      Alert.alert("Error", "Unable to update status. User not logged in.");
       return;
     }
 
+    // Update UI immediately
     setIsOnline(value);
 
     try {
-      const updateData = {
+      const statusPayload = {
         isOnline: value,
         isAvailable: value,
         availabilityStatus: value ? 'online' : 'offline',
         updatedAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      if (userCollection === 'FuelStations') {
-        updateData['stationDetails.isOnline'] = value;
-      } else {
-        updateData['shopDetails.isOnline'] = value;
-      }
+      // 🟢 Target exact collection based on providerType or update existing doc with UID
+      const collectionName = (providerType === 'fuel_station' || providerType === 'fuel') 
+        ? 'FuelStations' 
+        : 'Mechanics';
 
-      // Merge: true hone ki waja se agar isOnline ki field pehle nahi thi, toh nayi create ho jayegi
-      await firestore()
-        .collection(userCollection)
-        .doc(targetDocId)
-        .set(updateData, { merge: true });
+      // 1. Direct update on exact Document UID (NO .add() used, NO duplicate document possible)
+      await firestore().collection(collectionName).doc(uid).set({
+        ...statusPayload,
+        ...(collectionName === 'Mechanics' 
+          ? { 'shopDetails.isOnline': value, 'shopDetails.isAvailable': value }
+          : { 'stationDetails.isOnline': value, 'stationDetails.isAvailable': value }
+        )
+      }, { merge: true });
+
+      // 2. Always mirror update in 'users' collection using UID
+      await firestore().collection('users').doc(uid).set(statusPayload, { merge: true });
+
+      console.log(`Successfully updated status to ${value} for UID: ${uid}`);
 
     } catch (error) {
-      console.log('Update Error:', error);
+      console.log('Status Update Error:', error);
       Alert.alert('Error', 'Failed to update availability status.');
       setIsOnline(!value);
     }

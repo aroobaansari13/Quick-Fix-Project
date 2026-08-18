@@ -1,18 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; 
 import { View, Text, TouchableOpacity, StatusBar, Image, ScrollView, Modal, TextInput, FlatList, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import { styles } from '../fuel/FuelStationHome.styles';
 import ProviderOrders from '../ProviderOrders';
-import ProviderRequestDetails from '../ProviderRequestDetails';
 import ProviderProfile from '../ProviderProfile';
 import { checkAndEnableLocation } from '../../../services/locationService';
 import { ServiceManager } from '../../../services/ServiceManager';
 import { ProviderLocationService } from '../../../services/ProviderLocationService';
 
-const FuelStationHome = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedRequest, setSelectedRequest] = useState(null);
+const FuelStationHome = ({ navigation, onLogout, initialTab = 'home' }) => { // 🟢 initialTab support handle kar diya
+  const [activeTab, setActiveTab] = useState(initialTab); // 🟢 initialTab set kar diya
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [services, setServices] = useState([]);
   const [fuelType, setFuelType] = useState('');
@@ -21,7 +19,7 @@ const FuelStationHome = () => {
   const [checkingLocation, setCheckingLocation] = useState(true);
 
   useEffect(() => {
-    // 🟢 Location & Services Initialization
+    // Location & Services Initialization
     const initApp = async () => {
       const isLocationOn = await checkAndEnableLocation();
       if (!isLocationOn) {
@@ -102,35 +100,30 @@ const FuelStationHome = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'orders':
-      return (
-        <ProviderOrders
-          onViewDetails={(request) => {
-            console.log('Opening Request Details:', request);
-            setSelectedRequest(request);
-            setActiveTab('requestDetails');
-          }}
-        />
-      );
-
-     case 'requestDetails':
-      return (
-        <ProviderRequestDetails
-          request={selectedRequest}
-          onBack={() => {
-            setSelectedRequest(null);
-            setActiveTab('orders');
-          }}
-        />
-      );
-
-      case 'profile':
-      return (
-        <ProviderProfile
-          onLogout={() => auth().signOut()}
-        />
-      );
-
+      case 'orders': return <ProviderOrders />;
+      
+      // 🟢 ProviderProfile wrapping + Flexible Availability, Settings & Terms Screen handler
+      case 'profile': 
+        return (
+          <ProviderProfile 
+            navigation={{
+              ...navigation,
+              navigate: (screen, params) => {
+                const lowerScreen = screen?.toLowerCase() || '';
+                if (lowerScreen.includes('availability') || lowerScreen.includes('setting')) {
+                  navigation?.navigate('AvailabilityScreen', { providerType: 'fuel_station', ...params });
+                } else if (lowerScreen.includes('terms') || lowerScreen.includes('policy')) {
+                  navigation?.navigate('TermsAndPolicies', { providerType: 'fuel_station', ...params });
+                } else if (navigation?.navigate) {
+                  navigation.navigate(screen, params);
+                }
+              }
+            }}
+            providerType="fuelStation" 
+            onLogout={onLogout || (() => auth().signOut())} 
+          />
+        );
+        
       case 'home':
       default:
         return (
@@ -224,9 +217,18 @@ const FuelStationHome = () => {
       </Modal>
 
       <View style={styles.bottomTab}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}><Icon name={activeTab==='home'?'home':'home-outline'} size={26} color={activeTab==='home'?'#1E3A8A':'#94A3B8'} /><Text>Home</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}><Icon name={activeTab==='orders'?'clipboard':'clipboard-outline'} size={26} color={activeTab==='orders'?'#1E3A8A':'#94A3B8'} /><Text>Orders</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}><Icon name={activeTab==='profile'?'person':'person-outline'} size={26} color={activeTab==='profile'?'#1E3A8A':'#94A3B8'} /><Text>Profile</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('home')}>
+          <Icon name={activeTab==='home'?'home':'home-outline'} size={26} color={activeTab==='home'?'#1E3A8A':'#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab==='home'?'#1E3A8A':'#94A3B8', fontWeight: '500' }}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('orders')}>
+          <Icon name={activeTab==='orders'?'clipboard':'clipboard-outline'} size={26} color={activeTab==='orders'?'#1E3A8A':'#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab==='orders'?'#1E3A8A':'#94A3B8', fontWeight: '500' }}>Orders</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setActiveTab('profile')}>
+          <Icon name={activeTab==='profile'?'person':'person-outline'} size={26} color={activeTab==='profile'?'#1E3A8A':'#94A3B8'} />
+          <Text style={{ fontSize: 11, color: activeTab==='profile'?'#1E3A8A':'#94A3B8', fontWeight: '500' }}>Profile</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
