@@ -7,7 +7,8 @@ const AdminDashboard = ({
   onLogout, 
   onPendingApplicationsPress, 
   onCustomersPress, 
-  onProvidersPress 
+  onProvidersPress,
+  onFeedbacksPress
 }) => {
   const AdminCard = ({ title, subTitle, icon, iconColor, onPress }) => (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
@@ -62,7 +63,7 @@ const AdminDashboard = ({
           subTitle="User complaints & reviews"
           icon="chatbubbles-outline"
           iconColor="#8B5CF6" // Purple
-          onPress={() => console.log("Manage Feedbacks Clicked")}
+          onPress={onFeedbacksPress}
         />
 
         {/* 2. Providers List */}

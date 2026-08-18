@@ -96,6 +96,7 @@ export const ServiceRequestService = {
   try {
     await firestore().collection('ServiceRequests').doc(requestId).update({
       status: 'completed',
+      feedbackShown: false,
       completedAt: firestore.FieldValue.serverTimestamp(),
     });
     return { success: true };
@@ -120,24 +121,53 @@ export const ServiceRequestService = {
 
   subscribeCustomerRequests(customerId, callback) {
     return firestore()
-    .collection('ServiceRequests')
-    .where('customerId', '==', customerId)
-    .onSnapshot(
-      snapshot => {
-        const requests = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+      .collection('ServiceRequests')
+      .where('customerId', '==', customerId)
+      .where('status', 'in', ['pending', 'accepted'])
+      .onSnapshot(
+        snapshot => {
+          const requests = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
 
-        callback(requests);
-      },
-      error => {
-        console.error(
-          "Error fetching customer requests: ",
-          error
-        );
-        callback([]);
-      }
-    );
+          callback(requests);
+        },
+        error => {
+          console.error("Error fetching customer requests: ", error);
+          callback([]);
+        }
+      );
   },
+
+  // Feedback save karne ke liye
+  async submitFeedback(requestId, feedbackData) {
+    try {
+      const currentUser = auth().currentUser;
+      if (!currentUser) throw new Error("No authenticated user found.");
+
+      // 1. Feedbacks collection mein data save karein
+      await firestore().collection('Feedbacks').add({
+        requestId: requestId,
+        customerId: currentUser.uid,
+        customerName: feedbackData.customerName || 'Customer',
+        customerEmail: currentUser.email || '',
+        providerId: feedbackData.providerId || '',
+        providerName: feedbackData.providerName || '',
+        rating: feedbackData.rating,
+        feedbackText: feedbackData.feedbackText,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      // 2. Request status ko 'reviewed' ya 'closed' update kar dein taaki dobara popup na aaye
+      await firestore().collection('ServiceRequests').doc(requestId).update({
+        feedbackShown: true,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error submitting feedback: ", error);
+      return { success: false, error: error.message };
+    }
+  }
 };

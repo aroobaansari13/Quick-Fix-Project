@@ -4,9 +4,11 @@ import { styles } from './CustomerOrders.styles';
 import Icon from 'react-native-vector-icons/Ionicons'; 
 import { COLORS } from '../../config/theme'; 
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import { ServiceRequestService } from '../../services/ServiceRequestService';
 import CustomerOrderCard from '../../components/CustomerOrderCard';
 import TrackingMap from './TrackingMap';
+import FeedbackModal from '../../components/FeedbackModal';
 
 const CustomerOrders = () => {
  
@@ -14,10 +16,25 @@ const CustomerOrders = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trackingRequest, setTrackingRequest] = useState(null); 
+  const [completedRequestForFeedback, setCompletedRequestForFeedback] = useState(null);
 
   const activeRequests = requests.filter(
     item => item.status !== 'rejected'
   );
+
+  const handleCloseOrSubmit = async (requestId) => {
+    // Modal band karein
+    setCompletedRequestForFeedback(null);
+    
+    // Firebase mein flag true kar dein taake dobara na aaye
+    try {
+      await firestore().collection('ServiceRequests').doc(requestId).update({
+        feedbackShown: true
+      });
+    } catch (error) {
+      console.error("Error updating feedbackShown:", error);
+    }
+  };
 
   useEffect(() => {
     const currentUser = auth().currentUser;
@@ -43,6 +60,37 @@ const CustomerOrders = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const currentUser = auth().currentUser;
+    if (!currentUser) return;
+
+    const unsubscribe = firestore()
+  .collection('ServiceRequests')
+  .where('customerId', '==', currentUser.uid)
+  .where('status', '==', 'completed')
+  .onSnapshot(snapshot => {
+    console.log('Completed snapshot size:', snapshot.size); 
+    console.log('Docs:', snapshot.docs.map(d => d.data()));
+    if (!snapshot.empty) {
+      // ✅ feedbackShown check code mein karo — Firebase index ki zaroorat nahi
+      const unshownDoc = snapshot.docs.find(
+        doc => doc.data().feedbackShown !== true
+      );
+      if (unshownDoc) {
+        setCompletedRequestForFeedback({ 
+          id: unshownDoc.id, 
+          ...unshownDoc.data() 
+        });
+      } else {
+        setCompletedRequestForFeedback(null);
+      }
+    } else {
+      setCompletedRequestForFeedback(null);
+    }
+  });
+    return () => unsubscribe();
+  }, []);
   
   return (
   <View style={styles.container}>
@@ -50,6 +98,12 @@ const CustomerOrders = () => {
     <StatusBar
       barStyle="dark-content"
       backgroundColor="#FFFFFF"
+    />
+
+    <FeedbackModal 
+      visible={!!completedRequestForFeedback} 
+      requestData={completedRequestForFeedback} 
+      onClose={() => handleCloseOrSubmit(completedRequestForFeedback?.id)}
     />
 
     {/* ✅ TrackingMap puri screen par — ScrollView se bahar */}

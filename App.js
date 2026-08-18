@@ -22,6 +22,7 @@ import AdminCustomerList from './src/screens/admin/AdminCustomerList';
 import AdminCustomerDetail from './src/screens/admin/AdminCustomerDetail';
 import AdminProviderList from './src/screens/admin/AdminProviderList';
 import AdminProviderDetail from './src/screens/admin/AdminProviderDetail';
+import AdminFeedbacks from './src/screens/admin/AdminFeedbacks';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ServiceDetails from './src/screens/customer/ServiceDetails';
 import CheckoutScreen from './src/screens/customer/CheckoutScreen';
@@ -162,6 +163,7 @@ const App = () => {
           onPendingApplicationsPress={() => setCurrentScreen('pendingAppsList')}
           onCustomersPress={() => setCurrentScreen('adminCustomerList')}
           onProvidersPress={() => setCurrentScreen('adminProviderList')}
+          onFeedbacksPress={() => setCurrentScreen('feedbacksList')} 
         />
       )}
       {currentScreen === 'pendingAppsList' && (
@@ -200,6 +202,12 @@ const App = () => {
         <AdminProviderDetail 
           provider={selectedProvider}
           onBack={() => setCurrentScreen('adminProviderList')}
+        />
+      )}
+
+      {currentScreen === 'feedbacksList' && (
+        <AdminFeedbacks 
+          onBack={() => setCurrentScreen('adminDashboard')} 
         />
       )}
 
