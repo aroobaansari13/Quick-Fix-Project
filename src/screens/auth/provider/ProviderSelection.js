@@ -1,11 +1,19 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { styles } from './ProviderSelection.styles';
+import Icon from 'react-native-vector-icons/Ionicons'
 
-const ProviderSelection = ({ onMechanicPress, onFuelPress, onSignInPress }) => {
+
+const ProviderSelection = ({onBack, onMechanicPress, onFuelPress, onSignInPress }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      <View style={styles.backButtonRow}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          <Icon name="arrow-back" size={24} color="#1E293B" />
+        </TouchableOpacity>
+      </View>
       
       {/* Small Logo */}
       <Image 

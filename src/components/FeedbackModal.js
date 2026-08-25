@@ -66,7 +66,7 @@ const FeedbackModal = ({ visible, requestData, onClose }) => {
 
           <View style={styles.starsContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity key={star} onPress={() => setRating(star)} key={star}>
+              <TouchableOpacity key={star} onPress={() => setRating(star)}>
                 <Icon name={star <= rating ? "star" : "star-outline"} size={32} color="#F59E0B" />
               </TouchableOpacity>
             ))}

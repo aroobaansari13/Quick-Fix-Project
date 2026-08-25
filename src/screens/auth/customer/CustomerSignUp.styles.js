@@ -12,19 +12,30 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerText: {
-    marginTop: 20,
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
+  fontSize: 26,
+  fontWeight: 'bold',
+  color: '#1E293B',
+  textAlign: 'center',
+  flex: 1, 
+  marginRight: 50
+},
   subText: {
     fontSize: 16,
     color: '#666666',
     marginBottom: 30,
     textAlign: 'center',
   },
+  backButtonRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between', // 🌟 Left, Center aur Right elements ko balance karne ke liye
+  marginBottom: 5,
+  marginTop: 10,
+},
+backButton: {
+  padding: 4,
+  backgroundColor: 'transparent',
+},
   inputContainer: {
     marginBottom: 15,
   },

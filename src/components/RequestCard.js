@@ -15,7 +15,7 @@ const RequestCard = ({ item, onViewDetails }) => {
         )}
         <View style={styles.infoContainer}>
           <Text style={styles.customerName}>{item.customerName || "Customer"}</Text>
-          <Text style={styles.requestSubText}>New Service Request</Text>
+          <Text style={styles.requestSubText}>New Order</Text>
         </View>
       </View>
       

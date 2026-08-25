@@ -18,6 +18,7 @@ const MechanicSignUpContainer = ({ onBackToSelection, onSignInPress, onSignUpSuc
   if (currentStep === 1) {
     return (
       <MechanicSignUpStep1 
+        onBack={onBackToSelection}
         onNext={(data) => {
           setMechanicData(data); 
           setCurrentStep(2);   

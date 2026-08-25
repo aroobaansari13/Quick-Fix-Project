@@ -30,7 +30,7 @@ const CustomerHome = ({ onLogout, onEditProfilePress, initialTab, profileImage, 
     );
   }, []);
 
-  if (checkingLocation) {
+  if (checkingLocation  && activeTab === 'home') {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <ActivityIndicator size="large" color="#10B981" />

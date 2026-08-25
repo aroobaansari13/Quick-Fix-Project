@@ -9,6 +9,7 @@ const FuelStationSignUpContainer = ({ onBackToSelection, onSignInPress, onSignUp
   if (currentStep === 1) {
     return (
       <FuelStationSignUpStep1 
+        onBack={onBackToSelection}
         onNext={(data) => {
           setFuelData(data); 
           setCurrentStep(2);   

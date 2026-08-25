@@ -5,8 +5,8 @@ export const COLORS = {
   white: '#FFFFFF',
   black: '#1C1C1C',
   gray: '#8E8E93',
-  error: '#FF3B30',       
-  success: '#34C759',
+  error: '#bf150c',       
+  success: '#0ca131',
 };
 
 export const SIZES = {

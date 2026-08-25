@@ -13,8 +13,6 @@ const ManageProfile = ({ navigation, route }) => {
   // Toggling states
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fetchingData, setFetchingData] = useState(true); // Initial data loading state
-
   // Current login user ki details nikalne ke liye
   const currentUser = auth().currentUser;
 
@@ -23,7 +21,6 @@ const ManageProfile = ({ navigation, route }) => {
     const fetchUserProfile = async () => {
       if (!currentUser) {
         Alert.alert("Error", "User session not found. Please login again.");
-        setFetchingData(false);
         return;
       }
 
@@ -41,8 +38,6 @@ const ManageProfile = ({ navigation, route }) => {
       } catch (error) {
         console.log("Error fetching profile from Firestore:", error);
         Alert.alert("Error", "Failed to load profile data from server.");
-      } finally {
-        setFetchingData(false);
       }
     };
 
@@ -98,16 +93,6 @@ const ManageProfile = ({ navigation, route }) => {
       console.log("Error reverting Firestore data:", error);
     }
   };
-
-  // Agar background mein database se data aa raha ho toh loading screen dikhayein
-  if (fetchingData) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
-        <ActivityIndicator size="large" color="#002855" />
-        <Text style={{ marginTop: 10, color: '#64748B', fontWeight: '500' }}>Fetching profile data...</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>

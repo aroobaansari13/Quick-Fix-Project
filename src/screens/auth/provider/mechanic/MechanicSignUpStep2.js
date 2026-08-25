@@ -48,14 +48,40 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
   };
 
   const handleSignUp = async () => {
-    if (!workshopName || !workshopAddress) {
-      Alert.alert("Error", "Please fill Workshop Name and Address!");
-      return;
-    }
+    if (!workshopName.trim() || !workshopAddress.trim()) {
+  Alert.alert(
+    "Error",
+    "Please fill Workshop Name and Address!"
+  );
+  return;
+}
+
+if (workshopName.trim().length < 3) {
+  Alert.alert(
+    "Invalid Workshop Name",
+    "Workshop name must be at least 3 characters."
+  );
+  return;
+}
+
+if (workshopAddress.trim().length < 5) {
+  Alert.alert(
+    "Invalid Address",
+    "Please enter a complete workshop address."
+  );
+  return;
+}
     if (!workshopPic) {
       Alert.alert("Error", "Please upload your Workshop Picture!");
       return;
     }
+    if (!certificate) {
+  Alert.alert(
+    "Error",
+    "Please upload your Professional Certificate!"
+  );
+  return;
+}
     if (!step1Data) {
       Alert.alert("Error", "Basic details missing. Please go back to Step 1.");
       return;
@@ -81,13 +107,14 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
         role: 'mechanic',
         status: 'pending', 
         createdAt: firestore.FieldValue.serverTimestamp(),
-        cnic: step1Data.cnic || 'N/A',
-        profilePicture: step1Data.profilePicUrl || workshopPic.uri || '',
+        cnicFrontUrl: step1Data.cnicFront?.uri || '',
+        cnicBackUrl: step1Data.cnicBack?.uri || '',
         documentUrl: step1Data.documentUrl || certificate?.uri || '',
         shopDetails: {
           shopName: workshopName.trim(),
           address: workshopAddress.trim(),
           specializations: specializations.trim() || 'General Mechanic',
+          workshopPicUrl: workshopPic?.uri || '',
           latitude: step1Data.latitude || 0,
           longitude: step1Data.longitude || 0
         }
@@ -143,13 +170,17 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
             <View style={styles.fieldWrapper}>
                <Icon name="business-outline" size={20} color="#64748B" style={styles.fieldIcon} />
                <TextInput
-                 style={styles.input}
-                 placeholder="Enter workshop name"
-                 placeholderTextColor="#999"
-                 value={workshopName}
-                 onChangeText={setWorkshopName}
-                 editable={!loading}
-               />
+  style={styles.input}
+  placeholder="Enter workshop name"
+  placeholderTextColor="#999"
+  value={workshopName}
+  onChangeText={(text) => {
+    const cleaned = text.replace(/[^A-Za-z0-9\s.&'-]/g, '');
+    setWorkshopName(cleaned);
+  }}
+  maxLength={60}
+  editable={!loading}
+/>
             </View>
           </View>
 
@@ -164,6 +195,7 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
                  placeholderTextColor="#999"
                  value={workshopAddress}
                  onChangeText={setWorkshopAddress}
+                 maxLength={150}
                  editable={!loading}
                />
             </View>
@@ -188,7 +220,7 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
           </TouchableOpacity>
 
           {/* Certificates Upload */}
-          <Text style={styles.inputLabel}>Professional Certificates (Optional)</Text>
+          <Text style={styles.inputLabel}>Professional Certificates*</Text>
           <TouchableOpacity 
             style={[styles.uploadBox, certificate && { borderColor: '#10B981', borderWidth: 1.5 }]} 
             activeOpacity={0.7}
@@ -201,7 +233,7 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
               color={certificate ? '#10B981' : '#64748B'} 
             />
             <Text style={[styles.uploadText, certificate && { color: '#10B981', fontWeight: '500' }]}>
-              {certificate ? `Selected: ${certificate.fileName?.substring(0, 20)}...` : "Upload diplomas or certifications (PDF/JPG)"}
+              {certificate ? `Selected: ${certificate.fileName?.substring(0, 20)}...` : "Upload diplomas or certifications"}
             </Text>
           </TouchableOpacity>
 
@@ -211,14 +243,18 @@ const MechanicSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPress 
             <View style={[styles.fieldWrapper, { height: 80, alignItems: 'flex-start', paddingTop: 10 }]}>
                <Icon name="star-outline" size={20} color="#64748B" style={styles.fieldIcon} />
                <TextInput
-                 style={[styles.input, { textAlignVertical: 'top' }]}
-                 placeholder="e.g. Engine Expert, Hybrid Specialist, etc."
-                 placeholderTextColor="#999"
-                 multiline={true}
-                 value={specializations}
-                 onChangeText={setSpecializations}
-                 editable={!loading}
-              />
+  style={[styles.input, { textAlignVertical: 'top' }]}
+  placeholder="e.g. Engine Expert, Hybrid Specialist, etc."
+  placeholderTextColor="#999"
+  multiline={true}
+  value={specializations}
+  onChangeText={(text) => {
+    const cleaned = text.replace(/[^A-Za-z0-9\s,./&()-]/g, '');
+    setSpecializations(cleaned);
+  }}
+  maxLength={150}
+  editable={!loading}
+/>
             </View>
           </View>
 

@@ -1,9 +1,18 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Modal, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { styles } from './ProviderEditProfileModal.styles';
 
-const ProviderEditProfileModal = ({ visible, onClose, tempImage, onCameraPress, onGalleryPress, onDonePress, onRemovePress }) => {
+const ProviderEditProfileModal = ({ 
+  visible, 
+  onClose, 
+  tempImage, 
+  uploading, 
+  onCameraPress, 
+  onGalleryPress, 
+  onDonePress, 
+  onRemovePress 
+}) => {
   return (
     <Modal
       animationType="slide"
@@ -27,8 +36,12 @@ const ProviderEditProfileModal = ({ visible, onClose, tempImage, onCameraPress, 
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               {tempImage && (
-                <TouchableOpacity style={styles.doneBtnBlock} onPress={onDonePress}>
-                  <Icon name="checkmark-circle" size={26} color="#10B981" /> 
+                <TouchableOpacity style={styles.doneBtnBlock} onPress={onDonePress} disabled={uploading}>
+                  {uploading ? (
+                    <ActivityIndicator size="small" color="#10B981" />
+                  ) : (
+                    <Icon name="checkmark-circle" size={26} color="#10B981" /> 
+                  )}
                 </TouchableOpacity>
               )}
               
@@ -53,7 +66,6 @@ const ProviderEditProfileModal = ({ visible, onClose, tempImage, onCameraPress, 
               <Text style={styles.optionLabelText}>Camera</Text>
             </TouchableOpacity>
 
-            {/* 🟢 Galti yahan thi: openGallery ko hata kar sirf onGalleryPress set kar diya hai */}
             <TouchableOpacity style={styles.optionClickBlock} onPress={onGalleryPress}>
               <View style={[styles.iconCircleWrapper, { backgroundColor: '#E3F2FD' }]}>
                 <Icon name="image" size={26} color="#1565C0" />

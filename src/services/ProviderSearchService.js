@@ -1,90 +1,98 @@
-// src/services/ProviderSearchService.js
 import firestore from '@react-native-firebase/firestore';
 import { calculateDistance } from '../utils/distanceHelper';
 
 export const searchNearbyServices = async (searchQuery, customerLat, customerLon) => {
   try {
-    // 1. Fetch all provider services from Firestore
     const servicesSnapshot = await firestore().collection('ProviderServices').get();
-
     const formattedQuery = searchQuery ? searchQuery.trim().toLowerCase() : '';
     const results = [];
 
     for (const doc of servicesSnapshot.docs) {
-      const serviceData = doc.data();
-      const { providerId, providerRole, title } = serviceData;
+      const serviceData = doc.data() || {};
+      const providerId = serviceData?.providerId;
+      const providerRole = serviceData?.providerRole;
 
       if (!providerId) continue;
 
-      // 🔍 Flexible Case-Insensitive Search Match (e.g., "tyre" matches "Tyre repair")
+      const serviceTitle = typeof serviceData.title === 'string' ? serviceData.title.toLowerCase() : '';
+      const serviceCategory = typeof serviceData.category === 'string' ? serviceData.category.toLowerCase() : '';
+
       if (formattedQuery !== '') {
-        const serviceTitle = (title || '').toLowerCase();
-        const serviceCategory = (serviceData.category || '').toLowerCase();
-        
-        const isMatch = serviceTitle.includes(formattedQuery) || serviceCategory.includes(formattedQuery);
-        if (!isMatch) continue;
+        if (!serviceTitle.includes(formattedQuery) && !serviceCategory.includes(formattedQuery)) {
+          continue;
+        }
       }
 
-      // 2. Correct Role Check ('fuelStation' & 'fuel_station' support)
-      const isFuel = providerRole === 'fuelStation' || providerRole === 'fuel_station';
+      const isFuel = providerRole === 'fuelStation' || providerRole === 'fuel_station' || providerRole === 'fuel';
       const collectionName = isFuel ? 'FuelStations' : 'Mechanics';
 
-      // First check in specific collection, then fallback to 'users' collection
-      let providerDoc = await firestore().collection(collectionName).doc(providerId).get();
-      
-      if (!providerDoc.exists) {
-        providerDoc = await firestore().collection('users').doc(providerId).get();
-      }
-
-      if (providerDoc.exists) {
-        const pData = providerDoc.data();
+      try {
+        const providerDoc = await firestore().collection(collectionName).doc(providerId).get();
         
-        const details = isFuel 
-          ? (pData.stationDetails || pData) 
-          : (pData.shopDetails || pData);
-
-        // 🟢 FIXED SAFE AVAILABILITY FILTER
-        // Agar top-level par isOnline true hai, toh usay Online hi mana jaye
-        const isOnline = pData.isOnline === true || (pData.isOnline !== false && details?.isOnline === true);
-        const isAvailable = pData.isAvailable !== false && pData.availabilityStatus !== 'offline';
-
-        if (!isOnline || !isAvailable) {
-          console.log(`Skipping provider ${providerId} as they are offline.`);
-          continue; 
+        if (!providerDoc || !providerDoc.exists) {
+          console.log(`❌ Document NOT found in collection [${collectionName}] for providerId: ${providerId}`);
+          continue;
         }
 
-        // 3. Safely access location data
-        const lat = parseFloat(details?.latitude || pData?.latitude);
-        const lng = parseFloat(details?.longitude || pData?.longitude);
+        const pData = providerDoc.data() || {};
 
+        // 🔍 Debugging log for online status
+        console.log(`🔍 Checking Provider [${providerId}] in [${collectionName}] | isOnline:`, pData?.isOnline);
+
+        if (pData?.isOnline !== true) {
+          console.log(`⏩ Skipped because isOnline is not true for: ${providerId}`);
+          continue;
+        }
+
+        // Safe details extraction (Mechanic ke liye shopDetails check hota hai)
+        const details = isFuel 
+          ? (pData?.stationDetails || pData) 
+          : (pData?.shopDetails || pData);
+
+        // 🌟 Correct Priority: Pehle root level (pData.latitude) ya stationDetails ko check karein, kyunki shopDetails mein 0 save hai
+        const lat = parseFloat(
+          pData?.latitude ?? 
+          pData?.stationDetails?.latitude ?? 
+          pData?.shopDetails?.latitude ?? 
+          0
+        );
+        
+        const lng = parseFloat(
+          pData?.longitude ?? 
+          pData?.stationDetails?.longitude ?? 
+          pData?.shopDetails?.longitude ?? 
+          0
+        );
+
+        console.log(`📍 Fixed Coordinates for [${providerId}] -> Lat: ${lat}, Lng: ${lng}`);
+        
         if (!isNaN(lat) && !isNaN(lng) && customerLat && customerLon) {
           const dist = calculateDistance(customerLat, customerLon, lat, lng);
+          console.log(`📏 Calculated Distance: ${dist} KM (Threshold: 7 KM)`);
 
-          // Distance threshold (7 KM)
           if (dist <= 7) {
             results.push({
               id: doc.id,
               ...serviceData,
-              providerName: pData.name || "Unknown",
-              businessName: details?.shopName || details?.stationName || pData.businessName || "No Business Name",
-              address: details?.address || pData.address || "No Address",
+              title: serviceData.title || "Untitled Service",
+              providerName: pData?.name || "Unknown",
+              businessName: details?.shopName || details?.stationName || pData?.businessName || "No Name",
+              profilePic: pData?.profilePic || null,
               distance: dist.toFixed(1),
-              providerType: providerRole,
-              providerId: providerId,     
             });
+          } else {
+            console.log(`⏩ Skipped because distance (${dist} KM) is greater than 7 KM.`);
           }
         } else {
-          console.warn(`Provider ${providerId} missing valid location coordinates.`);
+          console.log(`❌ Invalid coordinates or customer location missing for provider: ${providerId}`);
         }
+      } catch (innerError) {
+        console.log('Skipping provider due to error:', innerError);
       }
     }
-
     return results;
-
   } catch (error) {
-    console.log("============== SEARCH ERROR ==============");
-    console.log(error);
-    console.log("=========================================");
+    console.error("Search Error:", error);
     throw error;
   }
 };

@@ -23,10 +23,31 @@ export const ServiceRequestService = {
       "Customer";
 
       const customerProfileImage =
+      userData?.profilePicture ||
       userData?.profileImage ||
       userData?.photoURL ||
       currentUser?.photoURL ||
       "";
+
+      const rawProviderType =
+  requestData?.provider?.providerType ||
+  requestData?.provider?.providerRole ||
+  requestData?.provider?.type ||
+  '';
+
+const normalizedProviderType =
+  rawProviderType
+    .toString()
+    .trim()
+    .toLowerCase();
+
+const providerType =
+  normalizedProviderType === 'fuelstation' ||
+  normalizedProviderType === 'fuel_station' ||
+  normalizedProviderType === 'fuel station' ||
+  normalizedProviderType === 'fuel'
+    ? 'fuel_station'
+    : 'mechanic';
 
       const newRequest = {
         customerId: currentUser.uid,
@@ -40,10 +61,8 @@ export const ServiceRequestService = {
         requestData?.provider?.providerName ||
         "",
 
-        providerType:
-          requestData?.provider?.providerType ||
-          requestData?.provider?.type ||
-        "",
+        providerType: providerType,
+        
       businessName:
       requestData?.provider?.businessName ||
       "",
@@ -139,6 +158,48 @@ export const ServiceRequestService = {
         }
       );
   },
+
+  // Customer history
+subscribeCustomerHistory(customerId, callback) {
+  return firestore()
+    .collection('ServiceRequests')
+    .where('customerId', '==', customerId)
+    .where('status', 'in', ['completed', 'reviewed'])
+    .onSnapshot(
+      snapshot => {
+        const requests = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        callback(requests);
+      },
+      error => {
+        console.error("Error fetching customer history:", error);
+        callback([]);
+      }
+    );
+},
+
+// Provider history
+subscribeProviderHistory(providerId, callback) {
+  return firestore()
+    .collection('ServiceRequests')
+    .where('providerId', '==', providerId)
+    .where('status', '==', 'completed')
+    .onSnapshot(
+      snapshot => {
+        const requests = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        callback(requests);
+      },
+      error => {
+        console.error("Error fetching provider history:", error);
+        callback([]);
+      }
+    );
+},
 
   // Feedback save karne ke liye
   async submitFeedback(requestId, feedbackData) {

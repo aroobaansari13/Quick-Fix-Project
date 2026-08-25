@@ -16,13 +16,29 @@ export const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: 'bold',
     color: '#333333',
+    textAlign: 'center',
+    marginRight: 20,
+    flex: 1,
   },
+  headerRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  width: '100%',
+  marginTop: 0,   // 🌟 Top space khatam karne ke liye
+  paddingTop: 0,
+},
+backButton: {
+  padding: 4,
+  backgroundColor: 'transparent',
+},
   subText: {
     fontSize: 14,
     color: COLORS.primary, // Your Global Dark Blue Theme
     fontWeight: '600',
     marginTop: 4,
     marginBottom: 25,
+    marginLeft:70
   },
   inputContainer: {
     marginBottom: 16,

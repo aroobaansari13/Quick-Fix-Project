@@ -37,6 +37,7 @@ export const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: '#111827',
+    marginBottom:15
   },
   businessName: {
     fontSize: 15,
@@ -131,6 +132,28 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1F2937',
   },
+  bottomButtons: {
+  flexDirection: 'row',
+  width: '100%',
+  paddingHorizontal: 20,
+  gap: 15,
+  paddingBottom: 23,
+},
+
+bottomButton: {
+  flex: 1,
+  height: 60,
+  borderRadius: 13,
+  backgroundColor: COLORS.primary,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+bottomButtonText: {
+  color: '#FFFFFF',
+  fontSize: 18,
+  fontWeight: '700',
+},
 
   // Button
   nextButton: {

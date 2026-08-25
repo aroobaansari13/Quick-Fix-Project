@@ -95,15 +95,24 @@ const AdminProviderDetail = ({ provider, onBack }) => {
           <DetailItem label="Phone Number" value={provider.phone || provider.phoneNumber} icon="call-outline" />
           
           <DetailItem 
-            label={isMechanic ? "Workshop Name" : "Fuel Station Name"} 
-            value={provider.workshopName || provider.stationName} 
-            icon="business-outline" 
-          />
-          <DetailItem 
-            label={isMechanic ? "Workshop Address" : "Fuel Station Address"} 
-            value={provider.workshopAddress || provider.stationAddress || provider.address} 
-            icon="location-outline" 
-          />
+  label={isMechanic ? "Workshop Name" : "Fuel Station Name"} 
+  value={
+    isMechanic
+      ? provider.shopDetails?.shopName
+      : provider.stationDetails?.stationName
+  }
+  icon="business-outline" 
+/>
+
+<DetailItem 
+  label={isMechanic ? "Workshop Address" : "Fuel Station Address"} 
+  value={
+    isMechanic
+      ? provider.shopDetails?.address
+      : provider.stationDetails?.address
+  }
+  icon="location-outline" 
+/>
         </View>
 
         <View style={styles.actionContainer}>

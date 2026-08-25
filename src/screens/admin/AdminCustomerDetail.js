@@ -84,7 +84,7 @@ const AdminCustomerDetail = ({ customer, onBack }) => {
             <Icon name="person" size={40} color={COLORS.primary} />
           </View>
           <Text style={styles.profileName}>{customer.fullName || customer.name || 'N/A'}</Text>
-          <Text style={styles.profileStatus}>Status: {customer.status === 'disabled' ? '🔴 Disabled' : '🟢 Active'}</Text>
+          <Text style={styles.profileStatus}>Status: {customer.status === 'disabled' ? 'Disabled' : 'Active'}</Text>
         </View>
 
         <View style={styles.detailsSection}>

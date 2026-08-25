@@ -32,8 +32,8 @@ export const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
+    // borderWidth: 2,
+    // borderColor: COLORS.primary,
   },
   scrollContent: {
     paddingBottom: 100,

@@ -5,10 +5,10 @@ import { styles } from './SignIn.styles';
 import { COLORS } from '../config/theme';
 import { ADMIN_CREDENTIALS } from '../config/adminConfig';
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthManager } from '../services/AuthManager';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
+import { saveUserSession } from '../services/sessionService';
 
 const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack, navigation }) => {
   const [email, setEmail] = useState('');
@@ -51,7 +51,12 @@ const SignIn = ({ onAdminLoginSuccess, onSignUpPress, onSignInSuccess, onBack, n
 
     // Naya flow: AuthManager ko use karein
     const screenName = await AuthManager.loginAndGetRole(email.trim().toLowerCase(), password);
-    
+    let role = 'customer';
+      if (screenName === 'mechanicHome') role = 'mechanic';
+      else if (screenName === 'fuelStationHome') role = 'fuel';
+      
+      // 🌟 Session save karein taake app restart hone par selection screen na aaye
+      await saveUserSession(role);
     // Success hone par ye App.js ko screen name bhej dega
     onSignInSuccess(screenName); 
     

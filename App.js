@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text, Alert } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
+import { initializeAppSession } from './src/services/sessionService';
 import SplashScreen from './src/screens/splash/SplashScreen';
 import UserSelection from './src/screens/auth/UserSelection';
 import CustomerSignUp from './src/screens/auth/customer/CustomerSignUp';
@@ -16,7 +17,6 @@ import FuelStationSignUpContainer from './src/screens/auth/provider/fuel/FuelSta
 import FuelStationHome from './src/screens/provider/fuel/FuelStationHome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore'; 
 import AdminPendingApplications from './src/screens/admin/AdminPendingApplications';
 import AdminCustomerList from './src/screens/admin/AdminCustomerList';
 import AdminCustomerDetail from './src/screens/admin/AdminCustomerDetail';
@@ -28,8 +28,9 @@ import ServiceDetails from './src/screens/customer/ServiceDetails';
 import CheckoutScreen from './src/screens/customer/CheckoutScreen';
 import BusinessDetails from './src/screens/provider/BusinessDetails';
 import AvailabilityScreen from './src/screens/provider/AvailabilityScreen';
-import { FCMService } from './src/services/FCMService';
 import messaging from '@react-native-firebase/messaging';
+import { AlertProvider } from './src/context/AlertContext';
+import ProviderFeedbacks from './src/screens/provider/ProviderFeedbacks';
 
 const App = () => {
   const [isShowSplash, setIsShowSplash] = useState(true);
@@ -40,20 +41,42 @@ const App = () => {
   const [providerActiveTab, setProviderActiveTab] = useState('home');
   const [selectedService, setSelectedService] = useState(null);
   const [checkoutData, setCheckoutData] = useState(null);
+  const [businessProviderType, setBusinessProviderType] = useState('mechanic');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+
+  // App component se bahar — top level par
+  messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+   console.log('Background message:', remoteMessage);
+  });
+
+  // useEffect(() => {
+  //   const unsubscribe = auth().onAuthStateChanged(async (user) => {
+  //     if (isShowSplash) return;
+  //     if (!user) {
+  //       setCurrentScreen('selection');
+  //     }
+  //     else {
+  //       await FCMService.initializeFCM();
+  //     }
+  //     setIsSessionChecking(false);
+  //   });
+  //   return () => unsubscribe();
+  // }, [isShowSplash]);
 
   useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged(async (user) => {
+    const init = async () => {
       if (isShowSplash) return;
-      if (!user) {
-        setCurrentScreen('selection');
-      }
-      else {
-        await FCMService.initializeFCM();
-      }
+      
+      const sessionResult = await initializeAppSession();
+      setCurrentScreen(sessionResult.screen);
       setIsSessionChecking(false);
-    });
-    return () => unsubscribe();
+    };
+
+    init();
   }, [isShowSplash]);
+
+  
   if (isShowSplash) {
     return <SplashScreen onFinish={() => setIsShowSplash(false)} />;
   }
@@ -68,6 +91,7 @@ const App = () => {
   }
 
   return (
+    <AlertProvider>
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       {currentScreen === 'selection' && (
         <UserSelection 
@@ -92,7 +116,23 @@ const App = () => {
         <SignIn 
           onAdminLoginSuccess={() => setCurrentScreen('adminDashboard')}
           onBack={() => setCurrentScreen('selection')} 
-          onSignInSuccess={(screenName) => setCurrentScreen(screenName)}
+          onSignUpPress={() => setCurrentScreen('selection')}
+          onSignInSuccess={(screenName) => {
+
+    if (screenName === 'customerHome') {
+      setCustomerActiveTab('home');
+    }
+
+    if (
+      screenName === 'mechanicHome' ||
+      screenName === 'fuelStationHome'
+    ) {
+      setProviderActiveTab('home');
+    }
+
+    setCurrentScreen(screenName);
+  }}
+
           navigation={{
             navigate: (screen) => setCurrentScreen(screen)
           }}
@@ -112,6 +152,7 @@ const App = () => {
           onMechanicPress={() => setCurrentScreen('mechanicFlow')}
           onFuelPress={() => setCurrentScreen('fuelStationFlow')}
           onSignInPress={() => setCurrentScreen('signIn')}
+          onBack={() => setCurrentScreen('selection')}
         />
       )}
 
@@ -142,7 +183,10 @@ const App = () => {
               } else if (screen === 'AvailabilityScreen') {
                 setBusinessProviderType(params?.providerType || 'mechanic');
                 setCurrentScreen('availabilityScreen');
-              } else if (screen === 'TermsAndPolicies' || screen === 'termsAndPolicies') {
+              } else if (screen === 'ProviderFeedbacks') {
+                setBusinessProviderType(params?.providerType || 'mechanic');
+                setCurrentScreen('providerFeedbacks');
+                }else if (screen === 'TermsAndPolicies' || screen === 'termsAndPolicies') {
                 setBusinessProviderType(params?.providerType || 'mechanic');
                 setCurrentScreen('termsAndPolicies');
               }
@@ -178,7 +222,10 @@ const App = () => {
               } else if (screen === 'AvailabilityScreen') {
                 setBusinessProviderType(params?.providerType || 'fuel_station');
                 setCurrentScreen('availabilityScreen');
-              } else if (screen === 'TermsAndPolicies' || screen === 'termsAndPolicies') {
+              } else if (screen === 'ProviderFeedbacks') {
+                setBusinessProviderType(params?.providerType || 'fuel_station');
+                setCurrentScreen('providerFeedbacks');
+                } else if (screen === 'TermsAndPolicies' || screen === 'termsAndPolicies') {
                 setBusinessProviderType(params?.providerType || 'fuel_station');
                 setCurrentScreen('termsAndPolicies');
               }
@@ -312,7 +359,7 @@ const App = () => {
               if (businessProviderType === 'mechanic') {
                 setProviderActiveTab('profile');
                 setCurrentScreen('mechanicHome');
-              } else if (businessProviderType === 'fuel_station' || businessProviderType === 'fuel') {
+              } else if (businessProviderType === 'fuelstation' || businessProviderType === 'fuel_station' || businessProviderType === 'fuel') {
                 setProviderActiveTab('profile');
                 setCurrentScreen('fuelStationHome');
               } else {
@@ -355,7 +402,24 @@ const App = () => {
         />
       )}
 
+      {/* Provider Feedbacks */}
+      {currentScreen === 'providerFeedbacks' && (
+        <ProviderFeedbacks
+          navigation={{
+            goBack: () => {
+              setProviderActiveTab('profile');
+              setCurrentScreen(
+                businessProviderType === 'mechanic'
+                ? 'mechanicHome'
+                : 'fuelStationHome'
+              );
+            }
+          }}
+        />
+      )}
+
     </View>
+    </AlertProvider>
   );
 };
 

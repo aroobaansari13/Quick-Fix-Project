@@ -6,13 +6,26 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 30,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
+  backButtonRow: {
+  width: '100%',
+  alignItems: 'flex-start',
+  marginTop: 0,
+  paddingTop: 0,
+},
+backButton: {
+  padding: 4,
+  backgroundColor: 'transparent',
+  marginTop:25
+  
+},
   logo1: {
     width: 120,
     height: 120,
     marginBottom: 10,
+    marginTop:145
   },
   title: {
     fontSize: 26,

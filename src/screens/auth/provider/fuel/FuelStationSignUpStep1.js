@@ -16,7 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Geolocation from 'react-native-geolocation-service';
 import { checkAndEnableLocation } from '../../../../services/locationService';
 
-const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
+const FuelStationSignUpStep1 = ({onBack, onNext, onSignInPress }) => {
   // Fuel Station basic details 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,6 +28,26 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
   const [cnicBack, setCnicBack] = useState(null);
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
+
+  const validateName = (value) => {
+  return /^[A-Za-z\s.'-]+$/.test(value.trim());
+};
+
+const validateEmail = (value) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+};
+
+const validatePhone = (value) => {
+  return /^\+92\d{10}$/.test(value.trim());
+};
+
+const validateUsername = (value) => {
+  return /^[a-zA-Z0-9_]{4,20}$/.test(value.trim());
+};
+
+const validatePassword = (value) => {
+  return /^(?=.*[A-Za-z])(?=.*\d).{6,}$/.test(value);
+};
 
   useEffect(() => {
   Geolocation.getCurrentPosition(
@@ -82,41 +102,102 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
   };
 
   const handleNextStep = () => {
-    // Validation Logic
-    if (!name || !email || !homeAddress || !phone || !username || !password) {
-      Alert.alert("Error", "Please fill all compulsory fields!");
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters!");
-      return;
-    }
-    if (!phone.startsWith('+')) {
-      Alert.alert("Error", "Phone number must start with country code e.g. +923001234567");
-      return;
-    }
-    if (!cnicFront || !cnicBack) {
-      Alert.alert("Error", "Please upload both Front and Back sides of your CNIC!");
-      return;
-    }
+  if (
+    !name.trim() ||
+    !email.trim() ||
+    !homeAddress.trim() ||
+    !phone.trim() ||
+    !username.trim() ||
+    !password
+  ) {
+    Alert.alert(
+      "Error",
+      "Please fill all compulsory fields!"
+    );
+    return;
+  }
 
-    const step1Data = {
-      name: name.trim(),
-      email: email.trim(),
-      homeAddress: homeAddress.trim(),
-      phone: phone.trim(),
-      username: username.trim().toLowerCase(),
-      password: password,
-      cnicFront: cnicFront,
-      cnicBack: cnicBack,
-      latitude,
-      longitude,
-    };
+  if (!validateName(name)) {
+    Alert.alert(
+      "Invalid Name",
+      "Full name can only contain letters and spaces."
+    );
+    return;
+  }
 
-    if (onNext) {
-      onNext(step1Data);
-    }
+  if (name.trim().length < 2) {
+    Alert.alert(
+      "Invalid Name",
+      "Please enter a valid full name."
+    );
+    return;
+  }
+
+  if (!validateEmail(email)) {
+    Alert.alert(
+      "Invalid Email",
+      "Please enter a valid email address."
+    );
+    return;
+  }
+
+  if (homeAddress.trim().length < 5) {
+    Alert.alert(
+      "Invalid Address",
+      "Please enter your complete home address."
+    );
+    return;
+  }
+
+  if (!validatePhone(phone)) {
+    Alert.alert(
+      "Invalid Phone Number",
+      "Phone number must be in format +923001234567."
+    );
+    return;
+  }
+
+  if (!validateUsername(username)) {
+    Alert.alert(
+      "Invalid Username",
+      "Username must be 4 to 20 characters and can contain only letters, numbers and underscore."
+    );
+    return;
+  }
+
+  if (!validatePassword(password)) {
+    Alert.alert(
+      "Weak Password",
+      "Password must be at least 6 characters and contain at least one letter and one number."
+    );
+    return;
+  }
+
+  if (!cnicFront || !cnicBack) {
+    Alert.alert(
+      "Error",
+      "Please upload both Front and Back sides of your CNIC!"
+    );
+    return;
+  }
+
+  const step1Data = {
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    homeAddress: homeAddress.trim(),
+    phone: phone.trim(),
+    username: username.trim().toLowerCase(),
+    password: password,
+    cnicFront: cnicFront,
+    cnicBack: cnicBack,
+    latitude,
+    longitude,
   };
+
+  if (onNext) {
+    onNext(step1Data);
+  }
+};
 
   return (
     <KeyboardAvoidingView 
@@ -128,33 +209,44 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
           <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
           {/* Form Header */}
-          <Text style={styles.headerText}>Fuel Station Registration</Text>
+          <View style={styles.headerRow}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <Icon name="arrow-back" size={24} color="#1E293B" />
+            </TouchableOpacity>
+            <Text style={styles.headerText}>Fuel Station Registration</Text>
+          </View>
           <Text style={styles.subText}>Step 1 of 2: Station & Owner Details</Text>
 
           {/* Owner Full Name Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Full Name</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your full name"
-              placeholderTextColor="#999"
-              value={name}
-              onChangeText={setName}
-            />
+  style={styles.input}
+  placeholder="Enter your full name"
+  placeholderTextColor="#999"
+  value={name}
+  onChangeText={(text) => {
+    const cleaned = text.replace(/[^A-Za-z\s.'-]/g, '');
+    setName(cleaned);
+  }}
+  maxLength={50}
+/>
           </View>
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email Address</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter business email"
-              placeholderTextColor="#999"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
+  style={styles.input}
+  placeholder="Enter business email"
+  placeholderTextColor="#999"
+  keyboardType="email-address"
+  autoCapitalize="none"
+  autoCorrect={false}
+  value={email}
+  onChangeText={setEmail}
+  maxLength={100}
+/>
           </View>
 
           {/* Home Address Input */}
@@ -166,6 +258,7 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
               placeholderTextColor="#999"
               value={homeAddress}
               onChangeText={setHomeAddress}
+              maxLength={150}
             />
           </View>
 
@@ -173,39 +266,58 @@ const FuelStationSignUpStep1 = ({ onNext, onSignInPress }) => {
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Contact Number</Text>
             <TextInput
-              style={styles.input}
-              placeholder="e.g. +923001234567"
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-            />
+  style={styles.input}
+  placeholder="e.g. +923001234567"
+  placeholderTextColor="#999"
+  keyboardType="phone-pad"
+  value={phone}
+  onChangeText={(text) => {
+    let cleaned = text.replace(/[^\d+]/g, '');
+
+    if (cleaned.indexOf('+') > 0) {
+      cleaned = cleaned.replace(/\+/g, '');
+    }
+
+    if (!cleaned.startsWith('+') && cleaned.length > 0) {
+      cleaned = '+' + cleaned.replace(/\+/g, '');
+    }
+
+    setPhone(cleaned.slice(0, 13));
+  }}
+  maxLength={13}
+/>
           </View>
 
           {/* Username Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Username</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Choose a unique username"
-              placeholderTextColor="#999"
-              autoCapitalize="none"
-              value={username}
-              onChangeText={setUsername}
-            />
+  style={styles.input}
+  placeholder="Choose a unique username"
+  placeholderTextColor="#999"
+  autoCapitalize="none"
+  autoCorrect={false}
+  value={username}
+  onChangeText={(text) => {
+    const cleaned = text.replace(/[^a-zA-Z0-9_]/g, '');
+    setUsername(cleaned);
+  }}
+  maxLength={20}
+/>
           </View>
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Password</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Create a password"
-              placeholderTextColor="#999"
-              secureTextEntry={true}
-              value={password}
-              onChangeText={setPassword}
-            />
+  style={styles.input}
+  placeholder="Create a password"
+  placeholderTextColor="#999"
+  secureTextEntry={true}
+  value={password}
+  onChangeText={setPassword}
+  maxLength={50}
+/>
           </View>
 
           {/* CNIC Document Upload */}

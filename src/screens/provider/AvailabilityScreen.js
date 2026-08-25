@@ -8,148 +8,396 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
+
 import Icon from 'react-native-vector-icons/Ionicons';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+
 import { styles } from './AvailabilityScreen.styles';
 
 const AvailabilityScreen = ({ navigation, route }) => {
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   const currentUser = auth().currentUser;
   const uid = currentUser?.uid;
 
-  // App.js se aane wala providerType ('mechanic' ya 'fuel_station')
-  const providerType = route?.params?.providerType || 'mechanic';
+  /*
+   * ---------------------------------------------------------
+   * 1. GET PROVIDER TYPE
+   * ---------------------------------------------------------
+   *
+   * Expected values can be:
+   * mechanic
+   * fuel_station
+   * fuelStation
+   * Fuel Station
+   *
+   */
 
-  useEffect(() => {
-    if (!uid) { 
-      setLoading(false); 
-      return; 
+  const providerType = route?.params?.providerType || '';
+
+  const passedCollectionName = route?.params?.collectionName || '';
+
+  /*
+   * ---------------------------------------------------------
+   * 2. DETERMINE CORRECT FIRESTORE COLLECTION
+   * ---------------------------------------------------------
+   *
+   * providerType has priority.
+   *
+   * Mechanic      -> Mechanics
+   * Fuel Station  -> FuelStations
+   *
+   */
+
+  const getProviderCollection = () => {
+    const type = String(providerType).toLowerCase().trim();
+
+    // Fuel Station
+    if (
+      type.includes('fuel') ||
+      type.includes('fuelstation') ||
+      type.includes('fuel_station')
+    ) {
+      return 'FuelStations';
     }
 
+    // Mechanic
+    if (type.includes('mechanic')) {
+      return 'Mechanics';
+    }
+
+    /*
+     * If providerType is unavailable,
+     * use collectionName passed from ProviderProfile.
+     */
+    if (
+      passedCollectionName === 'FuelStations' ||
+      passedCollectionName === 'Mechanics'
+    ) {
+      return passedCollectionName;
+    }
+
+    /*
+     * Final fallback.
+     *
+     * This should normally NOT be reached if providerType
+     * is correctly passed from the provider account.
+     */
+    return 'Mechanics';
+  };
+
+  const collectionName = getProviderCollection();
+
+  /*
+   * Debug information
+   */
+  console.log('----------------------------------');
+  console.log('AvailabilityScreen');
+  console.log('Provider Type:', providerType);
+  console.log('Passed Collection:', passedCollectionName);
+  console.log('Final Collection:', collectionName);
+  console.log('Provider UID:', uid);
+  console.log('----------------------------------');
+
+  /*
+   * ---------------------------------------------------------
+   * 3. LOAD CURRENT AVAILABILITY STATUS
+   * ---------------------------------------------------------
+   */
+
+  useEffect(() => {
+    let isMounted = true;
+
     const fetchCurrentStatus = async () => {
+      if (!uid) {
+        if (isMounted) {
+          setLoading(false);
+        }
+
+        Alert.alert(
+          'Error',
+          'Provider account not found. Please login again.'
+        );
+
+        return;
+      }
+
       try {
-        // Priority 1: Check Mechanics collection
-        const mechDoc = await firestore().collection('Mechanics').doc(uid).get();
-        if (mechDoc.exists && mechDoc.data()?.isOnline !== undefined) {
-          setIsOnline(mechDoc.data()?.isOnline);
-          setLoading(false);
+        console.log(
+          `Checking provider document: ${collectionName}/${uid}`
+        );
+
+        const providerDoc = await firestore()
+          .collection(collectionName)
+          .doc(uid)
+          .get();
+
+        if (!providerDoc.exists) {
+          console.log(
+            `Provider document does not exist: ${collectionName}/${uid}`
+          );
+
+          if (isMounted) {
+            setIsOnline(false);
+          }
+
+          Alert.alert(
+            'Provider Record Not Found',
+            `Your provider profile was not found in ${collectionName}.`
+          );
+
           return;
         }
 
-        // Priority 2: Check FuelStations collection
-        const fuelDoc = await firestore().collection('FuelStations').doc(uid).get();
-        if (fuelDoc.exists && fuelDoc.data()?.isOnline !== undefined) {
-          setIsOnline(fuelDoc.data()?.isOnline);
-          setLoading(false);
-          return;
+        const data = providerDoc.data() || {};
+
+        console.log(
+          'Provider document data:',
+          data
+        );
+
+        if (isMounted) {
+          setIsOnline(data.isOnline ?? false);
         }
 
-        // Priority 3: Fallback to users collection
-        const userDoc = await firestore().collection('users').doc(uid).get();
-        if (userDoc.exists) {
-          setIsOnline(userDoc.data()?.isOnline ?? false);
-        }
       } catch (error) {
-        console.log('Error fetching status:', error);
+        console.log(
+          'Error fetching availability status:',
+          error
+        );
+
+        if (isMounted) {
+          setIsOnline(false);
+        }
+
+        Alert.alert(
+          'Error',
+          'Failed to load availability status.'
+        );
+
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchCurrentStatus();
-  }, [uid]);
+
+    return () => {
+      isMounted = false;
+    };
+
+  }, [uid, collectionName]);
+
+  /*
+   * ---------------------------------------------------------
+   * 4. UPDATE ONLINE / OFFLINE STATUS
+   * ---------------------------------------------------------
+   */
 
   const toggleOnlineStatus = async (value) => {
     if (!uid) {
-      Alert.alert("Error", "Unable to update status. User not logged in.");
+      Alert.alert(
+        'Error',
+        'Unable to update status. User is not logged in.'
+      );
+
       return;
     }
 
-    // Update UI immediately
-    setIsOnline(value);
+    if (updating) {
+      return;
+    }
+
+    /*
+     * Do NOT immediately change UI permanently.
+     * First update Firestore successfully.
+     */
+
+    setUpdating(true);
 
     try {
-      const statusPayload = {
-        isOnline: value,
-        isAvailable: value,
-        availabilityStatus: value ? 'online' : 'offline',
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      };
+      console.log(
+        `Updating availability: ${collectionName}/${uid}`
+      );
 
-      // 🟢 Target exact collection based on providerType or update existing doc with UID
-      const collectionName = (providerType === 'fuel_station' || providerType === 'fuel') 
-        ? 'FuelStations' 
-        : 'Mechanics';
+      /*
+       * First make sure the provider document exists.
+       */
+      const providerDoc = await firestore()
+        .collection(collectionName)
+        .doc(uid)
+        .get();
 
-      // 1. Direct update on exact Document UID (NO .add() used, NO duplicate document possible)
-      await firestore().collection(collectionName).doc(uid).set({
-        ...statusPayload,
-        ...(collectionName === 'Mechanics' 
-          ? { 'shopDetails.isOnline': value, 'shopDetails.isAvailable': value }
-          : { 'stationDetails.isOnline': value, 'stationDetails.isAvailable': value }
-        )
-      }, { merge: true });
+      if (!providerDoc.exists) {
+        console.log(
+          `Provider document missing: ${collectionName}/${uid}`
+        );
 
-      // 2. Always mirror update in 'users' collection using UID
-      await firestore().collection('users').doc(uid).set(statusPayload, { merge: true });
+        Alert.alert(
+          'Error',
+          `Provider document was not found in ${collectionName}.`
+        );
 
-      console.log(`Successfully updated status to ${value} for UID: ${uid}`);
+        return;
+      }
+
+      /*
+       * Update ONLY the existing UID document.
+       *
+       * update() is intentional here.
+       * It prevents accidentally creating a new provider document.
+       */
+
+      await firestore()
+        .collection(collectionName)
+        .doc(uid)
+        .update({
+          isOnline: value,
+          isAvailable: value,
+          availabilityStatus: value
+            ? 'online'
+            : 'offline',
+          updatedAt:
+            firestore.FieldValue.serverTimestamp(),
+        });
+
+      /*
+       * Firestore update successful.
+       */
+      setIsOnline(value);
+
+      console.log(
+        `Availability successfully updated to ${
+          value ? 'ONLINE' : 'OFFLINE'
+        }`
+      );
 
     } catch (error) {
-      console.log('Status Update Error:', error);
-      Alert.alert('Error', 'Failed to update availability status.');
-      setIsOnline(!value);
+      console.log(
+        'Status Update Error:',
+        error
+      );
+
+      Alert.alert(
+        'Error',
+        'Failed to update availability status.'
+      );
+
+    } finally {
+      setUpdating(false);
     }
   };
+
+  /*
+   * ---------------------------------------------------------
+   * 5. BACK BUTTON
+   * ---------------------------------------------------------
+   */
 
   const handleBackPress = () => {
     if (navigation?.canGoBack()) {
       navigation.goBack();
-    } else {
-      navigation?.navigate('ProviderProfile'); 
+    } else if (navigation?.navigate) {
+      navigation.navigate('ProviderProfile', {
+        providerType,
+        collectionName,
+      });
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#1E3A8A" />
-      </View>
-    );
-  }
+  /*
+   * ---------------------------------------------------------
+   * 6. LOADING SCREEN
+   * ---------------------------------------------------------
+   */
+
+  /*
+   * ---------------------------------------------------------
+   * 7. MAIN SCREEN
+   * ---------------------------------------------------------
+   */
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+
+      <StatusBar
+        backgroundColor="#FFFFFF"
+        barStyle="dark-content"
+      />
+
+      {/* Header */}
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-          <Icon name="arrow-back" size={24} color="#1E3A8A" />
+
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackPress}
+          disabled={updating}
+        >
+          <Icon
+            name="arrow-back"
+            size={24}
+            color="#1E3A8A"
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Status</Text>
+
+        <Text style={styles.headerTitle}>
+          Status
+        </Text>
+
       </View>
 
+      {/* Content */}
+
       <View style={styles.content}>
+
         <View style={styles.statusCard}>
+
           <View style={styles.statusTextContainer}>
-            <Text style={styles.statusTitle}>Current Availability</Text>
+
+            <Text style={styles.statusTitle}>
+              Current Availability
+            </Text>
+
             <Text style={styles.statusDescription}>
               {isOnline
                 ? 'You are currently ONLINE and visible to users.'
                 : 'You are currently OFFLINE and hidden from the map.'}
             </Text>
+
           </View>
-          <Switch
-            value={isOnline}
-            onValueChange={toggleOnlineStatus}
-            trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-            thumbColor={isOnline ? '#1E3A8A' : '#94A3B8'}
-          />
+
+          {updating ? (
+            <ActivityIndicator
+              size="small"
+              color="#1E3A8A"
+            />
+          ) : (
+            <Switch
+              value={isOnline}
+              onValueChange={toggleOnlineStatus}
+              disabled={updating}
+              trackColor={{
+                false: '#CBD5E1',
+                true: '#93C5FD',
+              }}
+              thumbColor={
+                isOnline
+                  ? '#1E3A8A'
+                  : '#94A3B8'
+              }
+            />
+          )}
+
         </View>
+
       </View>
+
     </View>
   );
 };

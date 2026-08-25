@@ -14,10 +14,12 @@ export const ServiceManager = {
             callback([]);
             return;
           }
+
           const services = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
+
           callback(services);
         },
         error => {
@@ -46,27 +48,28 @@ export const ServiceManager = {
 
       // 2. Sync service title into provider's main profile document
       if (providerRole && title) {
-        const isFuel = providerRole === 'fuelStation' || providerRole === 'fuel_station';
-        const primaryCollection = isFuel ? 'FuelStations' : 'Mechanics';
+        const isFuel =
+          providerRole === 'fuelStation' ||
+          providerRole === 'fuel_station';
+
+        const primaryCollection = isFuel
+          ? 'FuelStations'
+          : 'Mechanics';
 
         // Update primary collection (Mechanics or FuelStations)
-        await firestore().collection(primaryCollection).doc(providerId).set({
-          services: firestore.FieldValue.arrayUnion(title),
-          isOnline: true,
-          isAvailable: true,
-          availabilityStatus: 'online',
-        }, { merge: true });
-
-        // Update main 'users' collection to keep everything synced
-        await firestore().collection('users').doc(providerId).set({
-          services: firestore.FieldValue.arrayUnion(title),
-          isOnline: true,
-          isAvailable: true,
-          availabilityStatus: 'online',
-        }, { merge: true });
+        await firestore()
+          .collection(primaryCollection)
+          .doc(providerId)
+          .set({
+            services: firestore.FieldValue.arrayUnion(title),
+            isOnline: true,
+            isAvailable: true,
+            availabilityStatus: 'online',
+          }, { merge: true });
       }
 
       return newServiceRef;
+
     } catch (error) {
       console.error("Error adding service:", error);
       throw error;
@@ -76,10 +79,13 @@ export const ServiceManager = {
   // Update existing service
   updateService: async (serviceId, updateData) => {
     try {
-      return await firestore().collection('ProviderServices').doc(serviceId).update({
-        ...updateData,
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      });
+      return await firestore()
+        .collection('ProviderServices')
+        .doc(serviceId)
+        .update({
+          ...updateData,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        });
     } catch (error) {
       console.error("Error updating service:", error);
       throw error;
@@ -89,7 +95,10 @@ export const ServiceManager = {
   // Delete service
   deleteService: async (serviceId) => {
     try {
-      return await firestore().collection('ProviderServices').doc(serviceId).delete();
+      return await firestore()
+        .collection('ProviderServices')
+        .doc(serviceId)
+        .delete();
     } catch (error) {
       console.error("Error deleting service:", error);
       throw error;

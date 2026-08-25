@@ -1,13 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import firestore from '@react-native-firebase/firestore';
+import Geolocation from 'react-native-geolocation-service';
 import { styles } from './TrackingMap.styles';
 
 const TrackingMap = ({ request, onBack }) => {
   const [providerLocation, setProviderLocation] = useState(null);
+  const [customerLocation, setCustomerLocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const webViewRef = useRef(null);
 
+  // ✅ Customer ki real-time location
+  useEffect(() => {
+    const watchId = Geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCustomerLocation({ latitude, longitude });
+      },
+      (error) => console.log('Customer location error:', error),
+      { enableHighAccuracy: true, distanceFilter: 5, interval: 3000 }
+    );
+
+    return () => Geolocation.clearWatch(watchId);
+  }, []);
+
+  // ✅ Provider real-time location
   useEffect(() => {
     if (!request?.providerId) {
       setLoading(false);
@@ -18,7 +36,6 @@ const TrackingMap = ({ request, onBack }) => {
 
     const findAndTrackProvider = async () => {
       try {
-        // ✅ providerType se directly sahi collection choose karo
         let targetCollection = null;
 
         if (request.providerType === 'mechanic') {
@@ -29,7 +46,6 @@ const TrackingMap = ({ request, onBack }) => {
         ) {
           targetCollection = 'FuelStations';
         } else {
-          // Fallback — dono check karo
           const mechDoc = await firestore()
             .collection('Mechanics')
             .doc(request.providerId)
@@ -42,54 +58,48 @@ const TrackingMap = ({ request, onBack }) => {
               .collection('FuelStations')
               .doc(request.providerId)
               .get();
-
-            if (fuelDoc.exists) {
-              targetCollection = 'FuelStations';
-            }
+            if (fuelDoc.exists) targetCollection = 'FuelStations';
           }
         }
 
         if (!targetCollection) {
-          console.log('❌ Provider not found');
           setLoading(false);
           return;
         }
 
-        console.log('✅ Tracking from:', targetCollection);
-
-        // ✅ Realtime listener
         const docRef = firestore()
           .collection(targetCollection)
           .doc(request.providerId);
 
-        unsubscribe = docRef.onSnapshot(
-          doc => {
-            if (doc.exists) {
-              const data = doc.data();
-              const location = data?.currentLocation;
+        unsubscribe = docRef.onSnapshot(doc => {
+          if (doc.exists) {
+            const data = doc.data();
+            const location = data?.currentLocation;
 
-              if (
-                location &&
-                typeof location.latitude === 'number' &&
-                typeof location.longitude === 'number'
-              ) {
-                setProviderLocation({
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-                });
-                console.log('📍 Location updated:', location);
-              } else {
-                console.log('⚠️ currentLocation missing');
-                setProviderLocation(null);
+            if (
+              location &&
+              typeof location.latitude === 'number' &&
+              typeof location.longitude === 'number'
+            ) {
+              setProviderLocation({
+                latitude: location.latitude,
+                longitude: location.longitude,
+              });
+
+              // ✅ WebView ko real-time update bhejo
+              if (webViewRef.current) {
+                webViewRef.current.injectJavaScript(`
+                  updateProviderLocation(${location.latitude}, ${location.longitude});
+                  true;
+                `);
               }
             }
-            setLoading(false);
-          },
-          error => {
-            console.log('Snapshot error:', error);
-            setLoading(false);
           }
-        );
+          setLoading(false);
+        }, error => {
+          console.log('Snapshot error:', error);
+          setLoading(false);
+        });
 
       } catch (error) {
         console.log('Error:', error);
@@ -98,13 +108,18 @@ const TrackingMap = ({ request, onBack }) => {
     };
 
     findAndTrackProvider();
-
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [request?.providerId]);
+
+  // ✅ Customer location update WebView ko bhejo
+  useEffect(() => {
+    if (customerLocation && webViewRef.current) {
+      webViewRef.current.injectJavaScript(`
+        updateCustomerLocation(${customerLocation.latitude}, ${customerLocation.longitude});
+        true;
+      `);
+    }
+  }, [customerLocation]);
 
   if (loading) {
     return (
@@ -144,12 +159,72 @@ const TrackingMap = ({ request, onBack }) => {
       <body>
         <div id="map"></div>
         <script>
-          var map = L.map('map').setView([${providerLocation.latitude}, ${providerLocation.longitude}], 16);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-          L.marker([${providerLocation.latitude}, ${providerLocation.longitude}])
+          var providerLat = ${providerLocation.latitude};
+          var providerLng = ${providerLocation.longitude};
+          var customerLat = ${customerLocation?.latitude || providerLocation.latitude};
+          var customerLng = ${customerLocation?.longitude || providerLocation.longitude};
+
+          var map = L.map('map').setView([providerLat, providerLng], 15);
+
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+          }).addTo(map);
+
+          // ✅ Provider marker — blue
+          var providerIcon = L.divIcon({
+            html: '<div style="background:#1E3A8A;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            className: ''
+          });
+
+          // ✅ Customer marker — green
+          var customerIcon = L.divIcon({
+            html: '<div style="background:#10B981;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+            className: ''
+          });
+
+          var providerMarker = L.marker([providerLat, providerLng], { icon: providerIcon })
             .addTo(map)
-            .bindPopup('${request.providerName || "Provider"} is here')
+            .bindPopup('${request.providerName || "Provider"}')
             .openPopup();
+
+          var customerMarker = L.marker([customerLat, customerLng], { icon: customerIcon })
+            .addTo(map)
+            .bindPopup('You');
+
+          // ✅ Line between customer and provider
+          var routeLine = L.polyline(
+            [[customerLat, customerLng], [providerLat, providerLng]],
+            { color: '#1E3A8A', weight: 4, opacity: 0.7, dashArray: '8, 8' }
+          ).addTo(map);
+
+          // ✅ Map ko fit karo dono markers ke beech
+          var bounds = L.latLngBounds(
+            [providerLat, providerLng],
+            [customerLat, customerLng]
+          );
+          map.fitBounds(bounds, { padding: [50, 50] });
+
+          // ✅ Provider location update function — React Native se call hoga
+          function updateProviderLocation(lat, lng) {
+            providerMarker.setLatLng([lat, lng]);
+            routeLine.setLatLngs([
+              customerMarker.getLatLng(),
+              [lat, lng]
+            ]);
+          }
+
+          // ✅ Customer location update function
+          function updateCustomerLocation(lat, lng) {
+            customerMarker.setLatLng([lat, lng]);
+            routeLine.setLatLngs([
+              [lat, lng],
+              providerMarker.getLatLng()
+            ]);
+          }
         </script>
       </body>
     </html>
@@ -165,7 +240,12 @@ const TrackingMap = ({ request, onBack }) => {
           Tracking {request.providerName || 'Provider'}
         </Text>
       </View>
-      <WebView source={{ html: mapHtml }} style={styles.map} />
+      <WebView
+        ref={webViewRef}
+        source={{ html: mapHtml }}
+        style={styles.map}
+        javaScriptEnabled={true}
+      />
     </View>
   );
 };

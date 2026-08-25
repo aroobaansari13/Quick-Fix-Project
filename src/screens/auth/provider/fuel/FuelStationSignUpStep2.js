@@ -45,11 +45,79 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
     }
   };
 
+  const isValidExpiryDate = (value) => {
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (!match) {
+    return false;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return false;
+  }
+
+  // License expiry future mein honi chahiye
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return date >= today;
+};
+
   const handleSignUp = async () => {
-    if (!stationName || !stationAddress || !licenseNumber || !licenseExpiry) {
-      Alert.alert("Error", "Please fill all required fields!");
-      return;
-    }
+    if (
+  !stationName.trim() ||
+  !stationAddress.trim() ||
+  !licenseNumber.trim() ||
+  !licenseExpiry.trim()
+) {
+  Alert.alert(
+    "Error",
+    "Please fill all required fields!"
+  );
+  return;
+}
+
+if (stationName.trim().length < 3) {
+  Alert.alert(
+    "Invalid Station Name",
+    "Fuel station name must be at least 3 characters."
+  );
+  return;
+}
+
+if (stationAddress.trim().length < 5) {
+  Alert.alert(
+    "Invalid Address",
+    "Please enter the complete fuel station address."
+  );
+  return;
+}
+
+if (licenseNumber.trim().length < 4) {
+  Alert.alert(
+    "Invalid License Number",
+    "Please enter a valid station license number."
+  );
+  return;
+}
+
+if (!isValidExpiryDate(licenseExpiry)) {
+  Alert.alert(
+    "Invalid Expiry Date",
+    "Enter a valid future expiry date in DD/MM/YYYY format."
+  );
+  return;
+}
     if (!stationPic) {
       Alert.alert("Error", "Please upload your Fuel Station Picture!");
       return;
@@ -136,13 +204,17 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             <View style={styles.fieldWrapper}>
                <Icon name="business-outline" size={20} color="#64748B" style={styles.fieldIcon} />
                <TextInput
-                 style={styles.input}
-                 placeholder="Enter fuel station name"
-                 placeholderTextColor="#999"
-                 value={stationName}
-                 onChangeText={setStationName}
-                 editable={!loading}
-               />
+  style={styles.input}
+  placeholder="Enter fuel station name"
+  placeholderTextColor="#999"
+  value={stationName}
+  onChangeText={(text) => {
+    const cleaned = text.replace(/[^A-Za-z0-9\s.&'-]/g, '');
+    setStationName(cleaned);
+  }}
+  maxLength={60}
+  editable={!loading}
+/>
             </View>
           </View>
 
@@ -152,13 +224,14 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             <View style={styles.fieldWrapper}>
                <Icon name="location-outline" size={20} color="#64748B" style={styles.fieldIcon} />
                <TextInput
-                 style={styles.input}
-                 placeholder="Enter station complete address"
-                 placeholderTextColor="#999"
-                 value={stationAddress}
-                 onChangeText={setStationAddress}
-                 editable={!loading}
-               />
+  style={styles.input}
+  placeholder="Enter station complete address"
+  placeholderTextColor="#999"
+  value={stationAddress}
+  onChangeText={setStationAddress}
+  maxLength={150}
+  editable={!loading}
+/>
             </View>
           </View>
 
@@ -168,14 +241,21 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             <View style={styles.fieldWrapper}>
                <Icon name="card-outline" size={20} color="#64748B" style={styles.fieldIcon} />
                <TextInput
-                 style={styles.input}
-                 placeholder="Enter station license number"
-                 placeholderTextColor="#999"
-                 autoCapitalize="characters"
-                 value={licenseNumber}
-                 onChangeText={setLicenseNumber}
-                 editable={!loading}
-               />
+  style={styles.input}
+  placeholder="Enter station license number"
+  placeholderTextColor="#999"
+  autoCapitalize="characters"
+  value={licenseNumber}
+  onChangeText={(text) => {
+    const cleaned = text
+      .toUpperCase()
+      .replace(/[^A-Z0-9/()\-]/g, '');
+
+    setLicenseNumber(cleaned);
+  }}
+  maxLength={30}
+  editable={!loading}
+/>
             </View>
           </View>
 
@@ -185,13 +265,33 @@ const FuelStationSignUpStep2 = ({ step1Data, onSignUpFinish, onBack, onSignInPre
             <View style={styles.fieldWrapper}>
                <Icon name="calendar-outline" size={20} color="#64748B" style={styles.fieldIcon} />
                <TextInput
-                 style={styles.input}
-                 placeholder="DD / MM / YYYY"
-                 placeholderTextColor="#999"
-                 value={licenseExpiry}
-                 onChangeText={setLicenseExpiry}
-                 editable={!loading}
-               />
+  style={styles.input}
+  placeholder="DD/MM/YYYY"
+  placeholderTextColor="#999"
+  keyboardType="number-pad"
+  value={licenseExpiry}
+  onChangeText={(text) => {
+    let digits = text.replace(/\D/g, '').slice(0, 8);
+
+    if (digits.length >= 5) {
+      digits =
+        digits.slice(0, 2) +
+        '/' +
+        digits.slice(2, 4) +
+        '/' +
+        digits.slice(4);
+    } else if (digits.length >= 3) {
+      digits =
+        digits.slice(0, 2) +
+        '/' +
+        digits.slice(2);
+    }
+
+    setLicenseExpiry(digits);
+  }}
+  maxLength={10}
+  editable={!loading}
+/>
             </View>
           </View>
 

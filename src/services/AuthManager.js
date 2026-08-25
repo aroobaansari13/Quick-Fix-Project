@@ -10,10 +10,11 @@ export const AuthManager = {
     
     for (const col of collections) {
       const docSnapshot = await firestore().collection(col).doc(uid).get();
-      
+       console.log(`Checking ${col}:`, docSnapshot.exists);
       if (docSnapshot.exists()) {
         const data = docSnapshot.data(); 
-
+           console.log(`Data in ${col}:`, data); // ✅ Add karo
+    console.log(`Status:`, data?.status);
         if (data?.status === 'disabled' || data?.isBlocked === true || data?.status === 'blocked') {
           await auth().signOut();
           const error = new Error("Your account has been disabled by admin");

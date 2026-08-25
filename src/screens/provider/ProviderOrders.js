@@ -15,11 +15,15 @@ import { styles } from './ProviderOrders.styles';
 import auth from '@react-native-firebase/auth';
 import { ServiceRequestService } from '../../services/ServiceRequestService';
 import RequestCard from '../../components/RequestCard';
+import ServiceRequestDetails from './ProviderRequestDetails';
 
-const ProviderOrders = ({ onViewDetails }) => {
+const ProviderOrders = () => {
   const [activeTab, setActiveTab] = useState('active');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [historyRequests, setHistoryRequests] = useState([]); // ✅ Add karo
+  const [historyLoading, setHistoryLoading] = useState(true); // ✅ Add karo
 
   useEffect(() => {
     const currentUser = auth().currentUser;
@@ -49,6 +53,36 @@ const ProviderOrders = ({ onViewDetails }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const currentUser = auth().currentUser;
+    if (!currentUser) return;
+
+    const unsubscribe = ServiceRequestService.subscribeProviderHistory(
+      currentUser.uid,
+      (history) => {
+        const sortedHistory = history.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+          return timeB - timeA; 
+        });
+
+        setHistoryRequests(sortedHistory);
+        setHistoryLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  if (selectedRequest) {
+  return (
+    <ServiceRequestDetails
+      request={selectedRequest}
+      onBack={() => setSelectedRequest(null)}
+      onActionComplete={() => setSelectedRequest(null)}
+    />
+  );
+}
+
   return (
     <View style={styles.container}>
 
@@ -58,11 +92,7 @@ const ProviderOrders = ({ onViewDetails }) => {
       />
 
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          Incoming Orders
-        </Text>
-      </View>
+      
 
       {/* Tabs */}
       <View style={styles.tabContainer}>
@@ -108,21 +138,11 @@ const ProviderOrders = ({ onViewDetails }) => {
       {/* Content */}
       {activeTab === 'active' ? (
 
-        loading ? (
+  loading ? (
 
-          <View style={styles.contentContainer}>
-            <ActivityIndicator
-              size="large"
-              color={COLORS.primary}
-            />
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
 
-            <Text style={styles.emptySubtitle}>
-              Loading requests...
-            </Text>
-          </View>
-
-        ) : requests.length === 0 ? (
-
+  ) : requests.length === 0 ? (
           <View style={styles.contentContainer}>
 
             <View
@@ -181,9 +201,6 @@ const ProviderOrders = ({ onViewDetails }) => {
                   <Text style={{ color: '#64748B', marginTop: 4 }}>
                     PKR {item.totalAmount || 0}
                   </Text>
-                  <Text style={{ color: '#10B981', marginTop: 4, fontSize: 12 }}>
-                    ✅ Request Accepted
-                  </Text>
                   <TouchableOpacity
                     style={{
                       backgroundColor: '#1E3A8A',
@@ -221,7 +238,7 @@ const ProviderOrders = ({ onViewDetails }) => {
                 <RequestCard
                   key={item.id}
                   item={item}
-                  onViewDetails={onViewDetails}
+                  onViewDetails={(request) => setSelectedRequest(request)}
                 />
               )
             ))}
@@ -229,39 +246,45 @@ const ProviderOrders = ({ onViewDetails }) => {
 
         )
 
-      ) : (
+      ) : activeTab === 'history' ? (
 
-        <View style={styles.contentContainer}>
-
-          <View
-            style={{
-              width: 90,
-              height: 90,
-              borderRadius: 45,
-              backgroundColor: '#E0E7FF',
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginBottom: 20,
-            }}
-          >
-            <Icon
-              name="clipboard-outline"
-              size={50}
-              color={COLORS.primary}
-            />
+        historyLoading ? (
+  <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+) : historyRequests.length === 0 ? (
+          <View style={styles.contentContainer}>
+            <View style={{ width: 90, height: 90, borderRadius: 45, backgroundColor: '#E0E7FF', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+              <Icon name="clipboard-outline" size={50} color={COLORS.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>No Order History</Text>
+            <Text style={styles.emptySubtitle}>Your completed workshop service records will display here.</Text>
           </View>
+        ) : (
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            {historyRequests.map(item => (
+              <View key={item.id} style={{
+                backgroundColor: '#fff',
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 12,
+                elevation: 2,
+                borderLeftWidth: 4,
+                borderLeftColor: '#10B981',
+              }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1E293B' }}>
+                  {item.customerName || 'Customer'}
+                </Text>
+                <Text style={{ color: '#64748B', marginTop: 4 }}>
+                  PKR {item.totalAmount || 0}
+                </Text>
+                <Text style={{ color: '#10B981', marginTop: 4, fontSize: 12 }}>
+                  ✅ Completed
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        )
 
-          <Text style={styles.emptyTitle}>
-            No Order History
-          </Text>
-
-          <Text style={styles.emptySubtitle}>
-            Your completed workshop service records will display here.
-          </Text>
-
-        </View>
-
-      )}
+      ) : null}
 
     </View>
   );

@@ -6,10 +6,47 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3F4F6',
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 100,
-  },
+  backButton: {
+  paddingHorizontal: 20,
+  paddingVertical: 12,
+},
+
+backButtonText: {
+  fontSize: 30,
+  fontWeight: '700',
+  color: '#01040d',
+},
+
+scrollContent: {
+  padding: 20,
+  paddingBottom: 100,
+},
+cus:{
+padding:9
+},
+customerHeaderName: {
+  flex: 1,
+  fontSize: 18,
+  fontWeight: '700',
+  color: '#111827',
+  marginLeft: 10
+},
+customerHeaderImage: {
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  marginLeft: 10,
+},
+
+customerHeaderPlaceholder: {
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  marginLeft: 1,
+  backgroundColor: '#E5E7EB',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -68,6 +105,22 @@ export const styles = StyleSheet.create({
     color: '#4B5563',
     lineHeight: 20,
   },
+ bottomButtons: {
+  flexDirection: 'row',
+  width: '100%',
+  paddingHorizontal: 20,
+  gap: 15,
+  paddingBottom: 23,
+},
+
+bottomButton: {
+  flex: 1,
+  height: 60,
+  borderRadius: 13,
+  backgroundColor: COLORS.primary,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   confirmButton: {
     position: 'absolute',
     bottom: 25,
@@ -78,6 +131,7 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     elevation: 5,
+    flex:1
   },
   confirmButtonText: {
     color: '#FFFFFF',

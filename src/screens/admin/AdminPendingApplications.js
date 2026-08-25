@@ -228,13 +228,27 @@ const AdminPendingApplications = ({ onBack }) => {
             
             {/* Business Picture */}
             <Text style={[styles.boldLabel, { marginTop: 15, marginBottom: 4 }]}>Business Photo (Tap to Zoom):</Text>
-            <TouchableOpacity onPress={() => openImageFull(selectedApp.profilePicture || selectedApp.stationDetails?.stationPicName)}>
-              <Image 
-                source={{ uri: selectedApp.profilePicture || selectedApp.stationDetails?.stationPicName || 'https://via.placeholder.com/300x150?text=No+Photo' }} 
-                style={styles.largeDocumentImage} 
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
+            <TouchableOpacity
+  onPress={() =>
+    openImageFull(
+      selectedApp.profilePic ||
+      selectedApp.shopDetails?.workshopPicUrl ||
+      selectedApp.stationDetails?.stationPicName
+    )
+  }
+>
+  <Image 
+    source={{
+      uri:
+        selectedApp.profilePic ||
+        selectedApp.shopDetails?.workshopPicUrl ||
+        selectedApp.stationDetails?.stationPicName ||
+        'https://via.placeholder.com/300x150?text=No+Photo'
+    }}
+    style={styles.largeDocumentImage}
+    resizeMode="cover"
+  />
+</TouchableOpacity>
 
             {selectedApp.collectionName === 'Mechanics' && (
               <>

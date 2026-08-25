@@ -17,6 +17,8 @@ const CustomerOrders = () => {
   const [loading, setLoading] = useState(true);
   const [trackingRequest, setTrackingRequest] = useState(null); 
   const [completedRequestForFeedback, setCompletedRequestForFeedback] = useState(null);
+  const [historyRequests, setHistoryRequests] = useState([]); // ✅ Add karo
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   const activeRequests = requests.filter(
     item => item.status !== 'rejected'
@@ -91,6 +93,27 @@ const CustomerOrders = () => {
   });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const currentUser = auth().currentUser;
+    if (!currentUser) return;
+
+    const unsubscribe = ServiceRequestService.subscribeCustomerHistory(
+      currentUser.uid,
+      (history) => {
+        // ✅ Recent orders ko top par laane ke liye sort karein
+        const sortedHistory = history.sort((a, b) => {
+          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+          return dateB - dateA; // Newest first (Descending order)
+        });
+
+        setHistoryRequests(sortedHistory);
+        setHistoryLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
   
   return (
   <View style={styles.container}>
@@ -160,12 +183,7 @@ const CustomerOrders = () => {
 
         {/* Content */}
         {loading ? (
-          <View style={styles.contentContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.emptySubtitle}>
-              Loading orders...
-            </Text>
-          </View>
+          <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
 
         ) : activeTab === 'active' ? (
           activeRequests.length === 0 ? (
@@ -193,20 +211,52 @@ const CustomerOrders = () => {
             </ScrollView>
           )
 
-        ) : (
-          <View style={styles.contentContainer}>
-            <View style={styles.emptyIconContainer}>
-              <Icon name="reader-outline" size={50} color={COLORS.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>No Order History</Text>
-            <Text style={styles.emptySubtitle}>
-              You haven't completed any service orders yet.
-            </Text>
-          </View>
-        )}
-      </>
-    )}
-  </View>
-);
+        ) : activeTab === 'history' ? (
+            historyLoading ? (
+              <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />
+            ) : historyRequests.length === 0 ? (
+              <View style={styles.contentContainer}>
+                <View style={styles.emptyIconContainer}>
+                  <Icon name="reader-outline" size={50} color={COLORS.primary} />
+                </View>
+                <Text style={styles.emptyTitle}>No Order History</Text>
+                <Text style={styles.emptySubtitle}>
+                  You haven't completed any service orders yet.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.ordersList}
+              >
+                {historyRequests.map(item => (
+                  <View key={item.id} style={{
+                    backgroundColor: '#fff',
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 12,
+                    elevation: 2,
+                    borderLeftWidth: 4,
+                    borderLeftColor: '#10B981',
+                  }}>
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1E293B' }}>
+                      {item.providerName || 'Provider'}
+                    </Text>
+                    <Text style={{ color: '#64748B', marginTop: 4 }}>
+                      PKR {item.totalAmount || 0}
+                    </Text>
+                    <Text style={{ color: '#10B981', marginTop: 4, fontSize: 12 }}>
+                      ✅ Completed
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            )
+          ) : null}
+        </>
+      )}
+    </View>
+  );
 };
+
 export default CustomerOrders;

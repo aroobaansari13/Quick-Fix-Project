@@ -34,8 +34,8 @@ export const styles = StyleSheet.create({
     width: 125,
     height: 125,
     borderRadius: 70,
-    borderWidth: 2,
-    borderColor: '#002855', // Aapka original deep blue border color
+    // borderWidth: 2,
+    // borderColor: '#002855', // Aapka original deep blue border color
   },
   editBadge: {
     position: 'absolute',
